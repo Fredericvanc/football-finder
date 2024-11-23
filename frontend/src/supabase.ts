@@ -12,4 +12,27 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+if (!process.env.REACT_APP_SUPABASE_URL) {
+  console.error('Missing REACT_APP_SUPABASE_URL');
+}
+
+if (!process.env.REACT_APP_SUPABASE_ANON_KEY) {
+  console.error('Missing REACT_APP_SUPABASE_ANON_KEY');
+}
+
+export const supabase = createClient<Database>(
+  process.env.REACT_APP_SUPABASE_URL!,
+  process.env.REACT_APP_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  }
+);
+
+// Add error logging to auth state changes
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Auth state changed:', event, session?.user?.id);
+});

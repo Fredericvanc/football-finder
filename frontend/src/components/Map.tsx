@@ -37,6 +37,13 @@ export const MapView: React.FC<MapViewProps> = ({
   });
 
   useEffect(() => {
+    console.log('Mapbox Token:', process.env.REACT_APP_MAPBOX_TOKEN);
+    if (!process.env.REACT_APP_MAPBOX_TOKEN) {
+      console.error('Mapbox token is missing');
+    }
+  }, []);
+
+  useEffect(() => {
     setViewState(prev => ({
       ...prev,
       latitude: currentLocation.latitude,
@@ -66,13 +73,16 @@ export const MapView: React.FC<MapViewProps> = ({
   };
 
   if (!process.env.REACT_APP_MAPBOX_TOKEN) {
-    return (
-      <div style={{ padding: 20 }}>
-        <Typography variant="h6" color="error">
-          Error: Mapbox token not found. Please add your Mapbox token to the .env file.
-        </Typography>
-      </div>
-    );
+    return <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      bgcolor: 'grey.100',
+      borderRadius: 1
+    }}>
+      <Typography color="error">Map configuration error. Please check console.</Typography>
+    </Box>;
   }
 
   return (

@@ -14,69 +14,61 @@ const transformDbGameToGame = (dbGame: DbGame): Game => ({
 
 export const getGames = async (): Promise<Game[]> => {
   try {
+    console.log('Fetching games...');
     const { data: games, error } = await supabase
       .from('games')
       .select(`
         *,
-        creator:profiles(id, name, email)
-      `);
+        creator:profiles(*)
+      `)
+      .order('date', { ascending: true });
 
     if (error) {
+      console.error('Error fetching games:', error);
       throw error;
     }
 
-    if (!games) {
-      return [];
-    }
-
+    console.log('Fetched games:', games);
     return games.map(game => transformDbGameToGame(game as DbGame));
   } catch (error) {
-    console.error('Error fetching games:', error);
+    console.error('Error in getGames:', error);
     throw error;
   }
 };
 
 export const createGame = async (gameData: CreateGameData): Promise<Game> => {
   try {
-    const user = await supabase.auth.getUser();
-    if (!user.data.user?.id) {
-      throw new Error('Not authenticated');
+    console.log('Creating game with data:', gameData);
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error getting user:', userError);
+      throw userError;
     }
 
     const { data: game, error } = await supabase
       .from('games')
-      .insert({
-        title: gameData.title,
-        description: gameData.description || null,
-        location: gameData.location,
-        latitude: gameData.latitude,
-        longitude: gameData.longitude,
-        date: gameData.date,
-        max_players: gameData.max_players,
-        skill_level: gameData.skill_level || null,
-        creator_id: user.data.user.id,
-        location_name: gameData.location_name || null,
-        whatsapp_link: gameData.whatsapp_link || null,
-        is_recurring: gameData.is_recurring || false,
-        recurrence_frequency: gameData.recurrence_frequency || null,
-      })
+      .insert([
+        {
+          ...gameData,
+          creator_id: userData.user.id
+        }
+      ])
       .select(`
         *,
-        creator:profiles(id, name, email)
+        creator:profiles(*)
       `)
       .single();
 
     if (error) {
+      console.error('Error creating game:', error);
       throw error;
     }
 
-    if (!game) {
-      throw new Error('No game data returned');
-    }
-
+    console.log('Created game:', game);
     return transformDbGameToGame(game as DbGame);
   } catch (error) {
-    console.error('Error creating game:', error);
+    console.error('Error in createGame:', error);
     throw error;
   }
 };
