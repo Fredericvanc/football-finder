@@ -21,7 +21,7 @@ interface MapViewProps {
   };
 }
 
-const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN; // Replace with your Mapbox token
+const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || '';
 
 export const MapView: React.FC<MapViewProps> = ({
   games,
@@ -37,10 +37,11 @@ export const MapView: React.FC<MapViewProps> = ({
   });
 
   useEffect(() => {
-    console.log('Mapbox Token:', process.env.REACT_APP_MAPBOX_TOKEN);
-    if (!process.env.REACT_APP_MAPBOX_TOKEN) {
-      console.error('Mapbox token is missing');
+    if (!MAPBOX_TOKEN) {
+      console.error('Mapbox token is missing or empty');
+      return;
     }
+    console.log('Using Mapbox token:', MAPBOX_TOKEN.substring(0, 10) + '...');
   }, []);
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export const MapView: React.FC<MapViewProps> = ({
     }));
   };
 
-  if (!process.env.REACT_APP_MAPBOX_TOKEN) {
+  if (!MAPBOX_TOKEN) {
     return <Box sx={{ 
       height: '100%', 
       display: 'flex', 
