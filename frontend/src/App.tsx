@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Box, AppBar, Toolbar, Typography, Button, Snackbar, Container } from '@mui/material';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Box, AppBar, Toolbar, Typography, Button, Snackbar, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { MapView } from './components/Map';
 import { CreateGameForm } from './components/CreateGameForm';
 import { WelcomeBanner } from './components/WelcomeBanner';
@@ -12,8 +14,7 @@ import { supabase } from './supabase';
 import { ThemeProvider } from '@mui/material/styles';
 import { createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-
-const theme = createTheme();
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 function App() {
   const [games, setGames] = useState<Game[]>([]);
@@ -31,6 +32,38 @@ function App() {
     latitude: 37.7749,
     longitude: -122.4194, // Default to San Francisco
   });
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedMode = localStorage.getItem('darkMode');
+    return savedMode ? JSON.parse(savedMode) : false;
+  });
+
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: isDarkMode ? 'dark' : 'light',
+          primary: {
+            main: '#2196f3',
+          },
+          secondary: {
+            main: '#f50057',
+          },
+          background: {
+            default: isDarkMode ? '#121212' : '#ffffff',
+            paper: isDarkMode ? '#1e1e1e' : '#ffffff',
+          },
+        },
+      }),
+    [isDarkMode]
+  );
+
+  const toggleDarkMode = () => {
+    setIsDarkMode((prev: boolean) => {
+      const newMode = !prev;
+      localStorage.setItem('darkMode', JSON.stringify(newMode));
+      return newMode;
+    });
+  };
 
   useEffect(() => {
     // Check for existing session
@@ -205,11 +238,9 @@ function App() {
           position="fixed" 
           elevation={scrolled ? 1 : 0} 
           sx={{ 
-            background: isLoggedIn 
-              ? 'rgb(33, 43, 54)'
-              : scrolled 
-                ? 'rgb(33, 43, 54)'
-                : 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)',
+            background: isLoggedIn || scrolled
+              ? theme.palette.background.paper
+              : 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)',
             transition: 'all 0.3s ease',
             zIndex: (theme) => theme.zIndex.drawer + 1,
             '& .MuiToolbar-root': {
@@ -218,25 +249,62 @@ function App() {
           }}
         >
           <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <Typography 
+              variant="h6" 
+              component="div" 
+              sx={{ 
+                flexGrow: 1, 
+                color: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff'
+              }}
+            >
               Football Finder
             </Typography>
+            <IconButton
+              onClick={toggleDarkMode}
+              sx={{ 
+                mr: 2, 
+                color: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff'
+              }}
+            >
+              {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
             {isLoggedIn ? (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="body1">
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    color: theme.palette.text.primary
+                  }}
+                >
                   {user?.name || user?.email}
                 </Typography>
                 <Button 
-                  color="inherit" 
+                  variant="outlined"
                   onClick={handleLogout}
+                  sx={{ 
+                    color: theme.palette.text.primary,
+                    borderColor: theme.palette.text.primary,
+                    '&:hover': {
+                      borderColor: theme.palette.text.primary,
+                      backgroundColor: theme.palette.action.hover,
+                    }
+                  }}
                 >
                   Logout
                 </Button>
               </Box>
             ) : (
               <Button 
-                color="inherit" 
+                variant="outlined"
                 onClick={handleLogin}
+                sx={{ 
+                  color: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff',
+                  borderColor: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff',
+                  '&:hover': {
+                    borderColor: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  }
+                }}
               >
                 Login
               </Button>
@@ -327,6 +395,7 @@ function App() {
             Create New Game
           </Button>
         )}
+
         <CreateGameForm
           open={isCreateGameOpen}
           onClose={() => setIsCreateGameOpen(false)}
@@ -346,6 +415,7 @@ function App() {
           autoHideDuration={6000}
           onClose={() => setLocationError('')}
         />
+
       </div>
     </ThemeProvider>
   );
