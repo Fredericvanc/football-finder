@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import Map, { Marker, Popup, NavigationControl } from 'react-map-gl';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import Map, { Marker, Popup, NavigationControl, MapRef } from 'react-map-gl';
 import { Card, CardContent, Typography, IconButton, Box, Button, useTheme, Stack } from '@mui/material';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
@@ -44,6 +44,7 @@ export const MapView: React.FC<MapViewProps> = ({
   centerLocation,
 }) => {
   const theme = useTheme();
+  const mapRef = useRef<MapRef>(null);
   const [viewState, setViewState] = useState({
     latitude: currentLocation.latitude,
     longitude: currentLocation.longitude,
@@ -60,18 +61,17 @@ export const MapView: React.FC<MapViewProps> = ({
       : "mapbox://styles/mapbox/streets-v12"
   , [theme.palette.mode]);
 
-  // Memoize popup style
-  const popupStyle = useMemo(() => ({
-    '.mapboxgl-popup-content': {
-      backgroundColor: theme.palette.mode === 'dark' ? '#242424' : '#fff',
-      color: theme.palette.mode === 'dark' ? '#fff' : '#000',
-      padding: '12px',
-      borderRadius: '4px',
-    },
-    '.mapboxgl-popup-tip': {
-      borderTopColor: theme.palette.mode === 'dark' ? '#242424' : '#fff',
-    }
-  }), [theme.palette.mode]);
+  // Handle map load
+  const handleMapLoad = useCallback(() => {
+    console.log('Map loaded with style:', mapStyle);
+    setIsMapLoaded(true);
+  }, [mapStyle]);
+
+  // Handle map removal
+  const handleMapRemove = useCallback(() => {
+    console.log('Map removed');
+    setIsMapLoaded(false);
+  }, []);
 
   useEffect(() => {
     if (config.mapboxToken) {
@@ -98,6 +98,14 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   }, [centerLocation]);
 
+  // Handle theme changes
+  useEffect(() => {
+    if (mapRef.current && isMapLoaded) {
+      const map = mapRef.current.getMap();
+      map.setStyle(mapStyle);
+    }
+  }, [mapStyle, isMapLoaded]);
+
   const handleGPSClick = () => {
     setViewState(prev => ({
       ...prev,
@@ -109,6 +117,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
   const renderMap = () => (
     <Map
+      ref={mapRef}
       mapboxAccessToken={config.mapboxToken}
       mapStyle={mapStyle}
       {...viewState}
@@ -120,17 +129,12 @@ export const MapView: React.FC<MapViewProps> = ({
         transition: 'opacity 0.3s ease-in-out'
       }}
       onClick={() => onGameSelect(null)}
-      onLoad={() => setIsMapLoaded(true)}
-      onRemove={() => setIsMapLoaded(false)}
+      onLoad={handleMapLoad}
+      onRemove={handleMapRemove}
       maxZoom={20}
       minZoom={3}
       attributionControl={false}
       renderWorldCopies={false}
-      fog={{
-        range: [0.8, 8],
-        color: theme.palette.mode === 'dark' ? '#242424' : '#ffffff',
-        'horizon-blend': 0.1
-      }}
     >
       <NavigationControl position="top-right" />
       
