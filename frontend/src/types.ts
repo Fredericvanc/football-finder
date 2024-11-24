@@ -32,28 +32,32 @@ export interface DbGame {
   whatsapp_link: string | null;
   is_recurring: boolean;
   recurrence_frequency: string | null;
-  creator: DbProfile[] | null; 
+  creator: DbProfile | null;
 }
 
 export interface Game {
   id: number;
+  created_at: string;
   title: string;
   description: string | null;
   location: string;
   latitude: number;
   longitude: number;
   date: string;
-  date_time: string; 
+  date_time: string;
   max_players: number;
-  min_players: number; 
+  min_players: number;
   skill_level: string | null;
   creator_id: string;
   location_name: string | null;
   whatsapp_link: string | null;
   is_recurring: boolean;
   recurrence_frequency: string | null;
-  creator: User | null;
-  created_at: string;
+  creator: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
 }
 
 export interface CreateGameData {
@@ -63,7 +67,7 @@ export interface CreateGameData {
   latitude: number;
   longitude: number;
   date: string;
-  date_time?: string;
+  date_time: string;
   max_players: number;
   min_players?: number;
   skill_level?: string | null;
