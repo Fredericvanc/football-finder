@@ -23,6 +23,8 @@ interface MapViewProps {
 
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || '';
 
+// MapView component handles the display of games on an interactive map
+// Uses Mapbox for rendering and includes navigation controls
 export const MapView: React.FC<MapViewProps> = ({
   games,
   currentLocation,
