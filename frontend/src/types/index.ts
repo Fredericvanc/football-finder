@@ -3,37 +3,49 @@ export interface Location {
   longitude: number;
 }
 
-export interface Game {
+export interface Creator {
   id: string;
-  title?: string;
-  description?: string;
-  location_name?: string;
-  date_time: string;
-  whatsapp_link?: string;
-  max_players?: number;
-  skill_level?: string;
+  name: string;
+  email: string;
+}
+
+export interface Game {
+  id: number;
+  title: string;
+  description: string | null;
+  location: string;
+  location_name: string | null;
   latitude: number;
   longitude: number;
+  date: string;
+  date_time?: string; // For backward compatibility
+  max_players: number;
+  min_players?: number; // For backward compatibility
+  skill_level: string | null;
+  whatsapp_link: string | null;
+  is_recurring: boolean;
+  recurrence_frequency: string | null;
+  creator: Creator | null;
+  creator_id?: string; // For backward compatibility
+  created_at: string;
+}
+
+export interface CreateGameData {
+  title: string;
+  description?: string | null;
+  location: string;
+  latitude: number;
+  longitude: number;
+  date: string;
+  max_players?: number;
+  skill_level?: string | null;
+  whatsapp_link?: string | null;
   is_recurring?: boolean;
-  recurrence_frequency?: 'weekly';
+  recurrence_frequency?: string | null;
 }
 
 export interface User {
   id: number;
   email: string;
   notification_radius: number;
-}
-
-export interface CreateGameData {
-  title?: string;
-  description?: string;
-  location_name?: string;
-  date_time: string;
-  whatsapp_link?: string;
-  max_players?: number;
-  skill_level?: string;
-  latitude: number;
-  longitude: number;
-  is_recurring?: boolean;
-  recurrence_frequency?: 'weekly';
 }

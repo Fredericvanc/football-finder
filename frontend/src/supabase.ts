@@ -1,34 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from './types/supabase';
+import { config } from './config';
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!config.supabaseUrl || !config.supabaseAnonKey) {
   throw new Error(
-    'Missing Supabase environment variables. Please check your .env file:\n' +
-    `REACT_APP_SUPABASE_URL: ${supabaseUrl ? 'set' : 'missing'}\n` +
-    `REACT_APP_SUPABASE_ANON_KEY: ${supabaseAnonKey ? 'set' : 'missing'}`
+    'Missing Supabase configuration. Please check your .env file:\n' +
+    `REACT_APP_SUPABASE_URL: ${config.supabaseUrl ? 'set' : 'missing'}\n` +
+    `REACT_APP_SUPABASE_ANON_KEY: ${config.supabaseAnonKey ? 'set' : 'missing'}\n` +
+    `Current environment: ${config.env}`
   );
 }
 
-if (!process.env.REACT_APP_SUPABASE_URL) {
-  console.error('Missing REACT_APP_SUPABASE_URL');
-}
-
-if (!process.env.REACT_APP_SUPABASE_ANON_KEY) {
-  console.error('Missing REACT_APP_SUPABASE_ANON_KEY');
-}
-
 export const supabase = createClient<Database>(
-  process.env.REACT_APP_SUPABASE_URL!,
-  process.env.REACT_APP_SUPABASE_ANON_KEY!,
+  config.supabaseUrl,
+  config.supabaseAnonKey,
   {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true
-    }
+    },
   }
 );
 

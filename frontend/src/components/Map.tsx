@@ -6,6 +6,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { formatRelative } from 'date-fns';
 import { Game, Location } from '../types';
+import { config } from '../config';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapViewProps {
@@ -22,17 +23,14 @@ interface MapViewProps {
   };
 }
 
-const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
-
 // Add debug logging
-console.log('Environment variables:', {
-  MAPBOX_TOKEN: MAPBOX_TOKEN,
-  NODE_ENV: process.env.NODE_ENV,
-  all_env: process.env
+console.log('Environment:', {
+  env: config.env,
+  mapboxToken: config.mapboxToken ? 'set' : 'missing',
 });
 
-if (!MAPBOX_TOKEN) {
-  console.error('Mapbox token is missing in environment variables');
+if (!config.mapboxToken) {
+  throw new Error('Missing Mapbox token in configuration');
 }
 
 // MapView component handles the display of games on an interactive map
@@ -52,8 +50,8 @@ export const MapView: React.FC<MapViewProps> = ({
   });
 
   useEffect(() => {
-    if (MAPBOX_TOKEN) {
-      console.log('Mapbox initialized with token:', MAPBOX_TOKEN.substring(0, 10) + '...');
+    if (config.mapboxToken) {
+      console.log('Mapbox initialized with token:', config.mapboxToken.substring(0, 10) + '...');
     }
   }, []);
 
@@ -88,9 +86,9 @@ export const MapView: React.FC<MapViewProps> = ({
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {MAPBOX_TOKEN ? (
+      {config.mapboxToken ? (
         <Map
-          mapboxAccessToken={MAPBOX_TOKEN}
+          mapboxAccessToken={config.mapboxToken}
           mapStyle={theme.palette.mode === 'dark' 
             ? "mapbox://styles/mapbox/navigation-night-v1"
             : "mapbox://styles/mapbox/navigation-day-v1"
