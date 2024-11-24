@@ -23,7 +23,6 @@ function App() {
   const [isCreateGameOpen, setIsCreateGameOpen] = useState(false);
   const [locationError, setLocationError] = useState<string>('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
@@ -66,10 +65,20 @@ function App() {
   };
 
   useEffect(() => {
+    let mounted = true;
+    
     const fetchGames = async () => {
+      console.log('Initiating games fetch...');
       try {
         const fetchedGames = await getGames();
-        console.log('Fetched games:', fetchedGames);
+        if (!mounted) {
+          console.log('Component unmounted, skipping state update');
+          return;
+        }
+        console.log('Setting games state:', {
+          count: fetchedGames.length,
+          firstGame: fetchedGames[0],
+        });
         setGames(fetchedGames);
         setFilteredGames(fetchedGames);
       } catch (error) {
@@ -77,13 +86,20 @@ function App() {
       }
     };
 
-    fetchGames();
-  }, []);
-
-  useEffect(() => {
-    const initializeSession = async () => {
+    // Set up auth and fetch games
+    const initialize = async () => {
+      console.log('Starting initialization...');
+      
+      // Wait for Supabase to initialize
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session initialized:', { hasSession: !!session });
+      
+      if (!mounted) return;
       setIsLoggedIn(!!session);
+
+      // Fetch games after Supabase is initialized
+      await fetchGames();
+      
       if (session?.user) {
         try {
           const { data: profileData, error: profileError } = await supabase
@@ -93,6 +109,7 @@ function App() {
             .single();
 
           if (profileError) throw profileError;
+          if (!mounted) return;
 
           setUser({
             id: session.user.id,
@@ -101,6 +118,8 @@ function App() {
           });
         } catch (error) {
           console.error('Error initializing session:', error);
+          if (!mounted) return;
+          
           setUser({
             id: session.user.id,
             email: session.user.email!,
@@ -111,6 +130,9 @@ function App() {
       
       // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        console.log('Auth state changed:', { event: _event, hasSession: !!session });
+        if (!mounted) return;
+        
         setIsLoggedIn(!!session);
         if (session?.user) {
           try {
@@ -121,6 +143,7 @@ function App() {
               .single();
 
             if (profileError) throw profileError;
+            if (!mounted) return;
 
             setUser({
               id: session.user.id,
@@ -129,6 +152,8 @@ function App() {
             });
           } catch (error) {
             console.error('Error handling auth change:', error);
+            if (!mounted) return;
+            
             setUser({
               id: session.user.id,
               email: session.user.email!,
@@ -137,8 +162,12 @@ function App() {
           }
         } else {
           setUser(null);
-          setGames([]);
-          setFilteredGames([]);
+        }
+
+        // Only fetch games on actual auth state changes
+        if (_event !== 'INITIAL_SESSION') {
+          console.log('Auth event triggered games refresh:', _event);
+          fetchGames();
         }
       });
 
@@ -147,23 +176,34 @@ function App() {
       };
     };
 
-    initializeSession();
+    initialize();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
+    let mounted = true;
+    let geoWatchId: number | undefined;
+    
     // Get user's location
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+      geoWatchId = navigator.geolocation.watchPosition(
         (position) => {
-          setCurrentLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-          setLocationError('');
+          if (mounted) {
+            setCurrentLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+            setLocationError('');
+          }
         },
         (error) => {
-          console.error('Error getting location:', error);
-          setLocationError('Unable to get your location. Please enable location services.');
+          if (mounted) {
+            console.error('Error getting location:', error);
+            setLocationError('Unable to get your location. Please enable location services.');
+          }
         },
         {
           enableHighAccuracy: true,
@@ -174,53 +214,47 @@ function App() {
     } else {
       setLocationError('Geolocation is not supported by your browser.');
     }
-  }, []);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 50;
-      setScrolled(isScrolled);
+    return () => {
+      mounted = false;
+      if (geoWatchId !== undefined) {
+        navigator.geolocation.clearWatch(geoWatchId);
+      }
     };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleCreateGame = async (gameData: CreateGameData) => {
+  const handleCreateGame = async (gameData: CreateGameData): Promise<void> => {
     try {
       console.log('Creating game with data:', gameData);
       const newGame = await createGame(gameData);
       console.log('Created new game:', newGame);
       
-      // Add the new game to both games and filtered games
       setGames(prevGames => {
         const updatedGames = [...prevGames, newGame];
         console.log('Updated games list:', updatedGames);
         return updatedGames;
       });
+      
       setFilteredGames(prevGames => {
         const updatedFiltered = [...prevGames, newGame];
         console.log('Updated filtered games:', updatedFiltered);
         return updatedFiltered;
       });
       
-      // Center the map on the new game
       setCenterLocation({
         latitude: newGame.latitude,
         longitude: newGame.longitude,
       });
       
-      // Select the new game to show its popup
       setSelectedGame(newGame);
-      
       setIsCreateGameOpen(false);
 
-      // Reset center location after a delay
       setTimeout(() => {
         setCenterLocation(undefined);
       }, 1000);
     } catch (error) {
       console.error('Error creating game:', error);
+      setLocationError('Failed to create game. Please try again.');
     }
   };
 
@@ -261,8 +295,6 @@ function App() {
       await supabase.auth.signOut();
       setUser(null);
       setIsLoggedIn(false);
-      setGames([]);
-      setFilteredGames([]);
       localStorage.clear();
     } catch (error) {
       console.error('Error signing out:', error);
@@ -272,10 +304,6 @@ function App() {
   const handleAuthSuccess = (user: User) => {
     setUser(user);
     setIsLoggedIn(true);
-    getGames().then(fetchedGames => {
-      setGames(fetchedGames);
-      setFilteredGames(fetchedGames);
-    });
   };
 
   return (
@@ -284,12 +312,11 @@ function App() {
       <div className="App">
         <AppBar 
           position="fixed" 
-          elevation={scrolled ? 1 : 0} 
+          elevation={0} 
           sx={{ 
-            background: isLoggedIn || scrolled
+            background: isLoggedIn
               ? theme.palette.background.paper
               : 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)',
-            transition: 'all 0.3s ease',
             zIndex: (theme) => theme.zIndex.drawer + 1,
             '& .MuiToolbar-root': {
               transition: 'all 0.3s ease',
@@ -302,7 +329,7 @@ function App() {
               component="div" 
               sx={{ 
                 flexGrow: 1, 
-                color: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff'
+                color: isLoggedIn ? theme.palette.text.primary : '#fff'
               }}
             >
               Why Not Play Outside?
@@ -311,7 +338,7 @@ function App() {
               onClick={toggleDarkMode}
               sx={{ 
                 mr: 2, 
-                color: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff'
+                color: isLoggedIn ? theme.palette.text.primary : '#fff'
               }}
             >
               {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
@@ -342,8 +369,8 @@ function App() {
                 variant="outlined"
                 onClick={handleLogin}
                 sx={{ 
-                  color: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff',
-                  borderColor: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff',
+                  color: isLoggedIn ? theme.palette.text.primary : '#fff',
+                  borderColor: isLoggedIn ? theme.palette.text.primary : '#fff',
                 }}
               >
                 Login

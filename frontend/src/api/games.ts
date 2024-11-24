@@ -53,28 +53,79 @@ export const transformGame = (dbGame: DatabaseGame): Game => {
 };
 
 export const getGames = async (): Promise<Game[]> => {
-  console.log('Fetching games...');
+  console.log('Starting getGames...');
+  
   try {
-    const { data: games, error } = await supabase
+    // First try a simple count query
+    const { data: countData, error: countError } = await supabase
       .from('games')
-      .select(`
-        *,
-        profiles (
-          id,
-          name,
-          email
-        )
-      `)
-      .order('date', { ascending: true });
+      .select('*', { count: 'exact' });
+
+    console.log('Count query result:', {
+      success: !countError,
+      error: countError?.message,
+      count: countData?.length,
+      data: countData
+    });
+
+    // Now try the full query without profiles first
+    const { data: games, error, status, statusText } = await supabase
+      .from('games')
+      .select('*');
+
+    console.log('Full query response:', {
+      status,
+      statusText,
+      gamesCount: games?.length || 0,
+      games: games // Log the actual games data
+    });
 
     if (error) {
-      console.error('Supabase error:', error);
+      console.error('Supabase error:', {
+        error,
+        status,
+        statusText,
+        message: error.message,
+        details: error.details,
+      });
       throw error;
     }
 
-    return (games || []).map(game => transformGame(game as DatabaseGame));
+    // If we got games, then try to get profiles
+    if (games && games.length > 0) {
+      const gamesWithProfiles = await Promise.all(
+        games.map(async (game) => {
+          if (game.creator_id) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('id, name, email')
+              .eq('id', game.creator_id)
+              .single();
+            
+            return {
+              ...game,
+              profiles: profileData ? [profileData] : undefined
+            };
+          }
+          return game;
+        })
+      );
+
+      console.log('Games with profiles:', {
+        count: gamesWithProfiles.length,
+        firstGame: gamesWithProfiles[0]
+      });
+
+      return gamesWithProfiles.map(game => transformGame(game as DatabaseGame));
+    }
+
+    return [];
   } catch (error) {
-    console.error('Error in getGames:', error);
+    console.error('Error in getGames:', {
+      error,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     throw error;
   }
 };

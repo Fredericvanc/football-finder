@@ -11,6 +11,12 @@ if (!config.supabaseUrl || !config.supabaseAnonKey) {
   );
 }
 
+console.log('Initializing Supabase client with config:', {
+  hasUrl: !!config.supabaseUrl,
+  hasAnonKey: !!config.supabaseAnonKey,
+  env: config.env
+});
+
 export const supabase = createClient<Database>(
   config.supabaseUrl,
   config.supabaseAnonKey,
@@ -25,5 +31,8 @@ export const supabase = createClient<Database>(
 
 // Add error logging to auth state changes
 supabase.auth.onAuthStateChange((event, session) => {
-  console.log('Auth state changed:', event, session?.user?.id);
+  console.log('Auth state changed:', event, {
+    hasSession: !!session,
+    userId: session?.user?.id
+  });
 });
