@@ -1,13 +1,6 @@
 import { supabase } from '../supabase';
 import { Game, CreateGameData } from '../types';
 
-// Type for raw game data from Supabase
-interface SupabaseCreator {
-  id: string;
-  name: string | null;
-  email: string;
-}
-
 interface DatabaseGame {
   id: number;
   title: string;
@@ -19,11 +12,11 @@ interface DatabaseGame {
   date: string;
   max_players: number;
   skill_level: string | null;
-  creator_id: string;
   whatsapp_link: string | null;
   is_recurring: boolean;
   recurrence_frequency: string | null;
   created_at: string;
+  creator_id: string;
   profiles?: Array<{
     id: string;
     name: string | null;
@@ -64,7 +57,21 @@ export const getGames = async (): Promise<Game[]> => {
     const { data: games, error } = await supabase
       .from('games')
       .select(`
-        *,
+        id,
+        title,
+        description,
+        location,
+        location_name,
+        latitude,
+        longitude,
+        date,
+        max_players,
+        skill_level,
+        whatsapp_link,
+        is_recurring,
+        recurrence_frequency,
+        created_at,
+        creator_id,
         profiles(id, name, email)
       `);
 
@@ -102,7 +109,21 @@ export const createGame = async (gameData: CreateGameData): Promise<Game> => {
       .from('games')
       .insert([gameInsert])
       .select(`
-        *,
+        id,
+        title,
+        description,
+        location,
+        location_name,
+        latitude,
+        longitude,
+        date,
+        max_players,
+        skill_level,
+        whatsapp_link,
+        is_recurring,
+        recurrence_frequency,
+        created_at,
+        creator_id,
         profiles(id, name, email)
       `)
       .single();

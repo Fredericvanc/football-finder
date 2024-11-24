@@ -90,8 +90,8 @@ export const MapView: React.FC<MapViewProps> = ({
         <Map
           mapboxAccessToken={config.mapboxToken}
           mapStyle={theme.palette.mode === 'dark' 
-            ? "mapbox://styles/mapbox/navigation-night-v1"
-            : "mapbox://styles/mapbox/navigation-day-v1"
+            ? "mapbox://styles/mapbox/dark-v11"
+            : "mapbox://styles/mapbox/light-v11"
           }
           {...viewState}
           onMove={evt => setViewState(evt.viewState)}

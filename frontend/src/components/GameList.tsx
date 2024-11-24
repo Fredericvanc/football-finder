@@ -147,7 +147,7 @@ export const GameList: React.FC<GameListProps> = ({
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <GroupIcon color="action" />
                     <Typography variant="body2" color="text.secondary">
-                      {game.min_players} - {game.max_players} players
+                      Up to {game.max_players} players
                     </Typography>
                   </Box>
 

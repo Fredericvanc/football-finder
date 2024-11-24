@@ -42,7 +42,8 @@ export interface CreateGameData {
 }
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
-  notification_radius: number;
+  name: string | null;
+  notification_radius?: number;
 }

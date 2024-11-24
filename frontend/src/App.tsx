@@ -8,7 +8,7 @@ import { CreateGameForm } from './components/CreateGameForm';
 import { WelcomeBanner } from './components/WelcomeBanner';
 import { GameList, GameFilters } from './components/GameList';
 import { getGames, createGame } from './api';
-import { Game, CreateGameData, User, Location } from './types';
+import { Game, CreateGameData, User, Location } from './types/index';
 import { AuthDialog } from './components/AuthDialog';
 import { supabase } from './supabase';
 import { ThemeProvider } from '@mui/material/styles';

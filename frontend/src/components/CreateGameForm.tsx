@@ -36,10 +36,9 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
     title: '',
     description: '',
     location: '',
-    date_time: new Date(),
+    date: new Date(),
     whatsapp_link: '',
     max_players: '',
-    min_players: '',
     skill_level: '',
     latitude: currentLocation.latitude,
     longitude: currentLocation.longitude,
@@ -96,16 +95,16 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
     // Create the game data with required fields
     const gameData: CreateGameData = {
       title: formData.title,
+      description: formData.description || null,
       location: formData.location,
       latitude: formData.latitude,
       longitude: formData.longitude,
-      date: formData.date_time.toISOString(),
-      date_time: formData.date_time.toISOString(),
+      date: formData.date.toISOString(),
       max_players: parseInt(formData.max_players) || 10,
-      min_players: parseInt(formData.min_players) || 2,
-      skill_level: formData.skill_level,
+      skill_level: formData.skill_level || null,
+      whatsapp_link: formData.whatsapp_link || null,
       is_recurring: formData.is_recurring,
-      recurrence_frequency: formData.is_recurring ? formData.recurrence_frequency : undefined,
+      recurrence_frequency: formData.is_recurring ? formData.recurrence_frequency : null,
     };
 
     console.log('Submitting game data:', gameData);
@@ -208,9 +207,9 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <DateTimePicker
-                label="Date & Time"
-                value={formData.date_time}
-                onChange={(newValue) => setFormData({ ...formData, date_time: newValue || new Date() })}
+                label="Date and Time"
+                value={formData.date}
+                onChange={(newValue) => setFormData({ ...formData, date: newValue || new Date() })}
               />
               <FormControlLabel
                 control={
@@ -235,13 +234,6 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
               value={formData.max_players}
               onChange={(e) => setFormData({ ...formData, max_players: e.target.value })}
               placeholder="e.g., 10"
-            />
-            <TextField
-              label="Min Players"
-              type="number"
-              value={formData.min_players}
-              onChange={(e) => setFormData({ ...formData, min_players: e.target.value })}
-              placeholder="e.g., 2"
             />
             <TextField
               select
