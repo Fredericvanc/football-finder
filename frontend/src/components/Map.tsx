@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import Map, { Marker, Popup } from 'react-map-gl';
-import { Card, CardContent, Typography, IconButton, Box, Button } from '@mui/material';
+import Map, { Marker, Popup, NavigationControl } from 'react-map-gl';
+import { Card, CardContent, Typography, IconButton, Box, Button, useTheme } from '@mui/material';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import { formatRelative } from 'date-fns';
 import { Game, Location } from '../types';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -21,7 +22,18 @@ interface MapViewProps {
   };
 }
 
-const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || '';
+const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
+
+// Add debug logging
+console.log('Environment variables:', {
+  MAPBOX_TOKEN: MAPBOX_TOKEN,
+  NODE_ENV: process.env.NODE_ENV,
+  all_env: process.env
+});
+
+if (!MAPBOX_TOKEN) {
+  console.error('Mapbox token is missing in environment variables');
+}
 
 export const MapView: React.FC<MapViewProps> = ({
   games,
@@ -30,6 +42,7 @@ export const MapView: React.FC<MapViewProps> = ({
   onGameSelect,
   centerLocation,
 }) => {
+  const theme = useTheme();
   const [viewState, setViewState] = useState({
     latitude: currentLocation.latitude,
     longitude: currentLocation.longitude,
@@ -37,11 +50,9 @@ export const MapView: React.FC<MapViewProps> = ({
   });
 
   useEffect(() => {
-    if (!MAPBOX_TOKEN) {
-      console.error('Mapbox token is missing or empty');
-      return;
+    if (MAPBOX_TOKEN) {
+      console.log('Mapbox initialized with token:', MAPBOX_TOKEN.substring(0, 10) + '...');
     }
-    console.log('Using Mapbox token:', MAPBOX_TOKEN.substring(0, 10) + '...');
   }, []);
 
   useEffect(() => {
@@ -73,122 +84,128 @@ export const MapView: React.FC<MapViewProps> = ({
     }));
   };
 
-  if (!MAPBOX_TOKEN) {
-    return <Box sx={{ 
-      height: '100%', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      bgcolor: 'grey.100',
-      borderRadius: 1
-    }}>
-      <Typography color="error">Map configuration error. Please check console.</Typography>
-    </Box>;
-  }
-
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Map
-        {...viewState}
-        onMove={evt => setViewState(evt.viewState)}
-        style={{ width: '100%', height: '100%' }}
-        mapStyle="mapbox://styles/mapbox/streets-v11"
-        mapboxAccessToken={MAPBOX_TOKEN}
-        onClick={() => onGameSelect(null)}
-      >
-        {/* Current location marker */}
-        <Marker
-          longitude={currentLocation.longitude}
-          latitude={currentLocation.latitude}
-          anchor="bottom"
+      {MAPBOX_TOKEN ? (
+        <Map
+          mapboxAccessToken={MAPBOX_TOKEN}
+          mapStyle={theme.palette.mode === 'dark' 
+            ? "mapbox://styles/mapbox/navigation-night-v1"
+            : "mapbox://styles/mapbox/navigation-day-v1"
+          }
+          {...viewState}
+          onMove={evt => setViewState(evt.viewState)}
+          style={{ width: '100%', height: '100%' }}
+          onClick={() => onGameSelect(null)}
         >
-          <div style={{ 
-            width: '12px', 
-            height: '12px', 
-            background: '#4CAF50', 
-            borderRadius: '50%',
-            border: '2px solid white',
-            boxShadow: '0 0 0 2px rgba(76, 175, 80, 0.3)'
-          }} />
-        </Marker>
-
-        {/* Game markers */}
-        {games.map((game) => (
+          <NavigationControl position="top-right" />
+          
+          {/* Current location marker */}
           <Marker
-            key={game.id}
-            longitude={game.longitude}
-            latitude={game.latitude}
+            longitude={currentLocation.longitude}
+            latitude={currentLocation.latitude}
             anchor="bottom"
-            onClick={e => {
-              e.originalEvent.stopPropagation();
-              onGameSelect(game);
-            }}
           >
             <div style={{ 
-              width: '24px', 
-              height: '24px', 
-              background: selectedGame?.id === game.id ? '#ff0000' : '#1976d2',
+              width: '12px', 
+              height: '12px', 
+              background: '#4CAF50', 
               borderRadius: '50%',
-              border: '3px solid white',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
+              border: '2px solid white',
+              boxShadow: '0 0 0 2px rgba(76, 175, 80, 0.3)'
             }} />
           </Marker>
-        ))}
 
-        {/* Selected game popup */}
-        {selectedGame && (
-          <Popup
-            latitude={selectedGame.latitude}
-            longitude={selectedGame.longitude}
-            onClose={() => onGameSelect(null)}
-            closeOnClick={false}
-            closeButton={true}
-            className="game-popup"
-            maxWidth="300px"
-          >
-            <Box sx={{ p: 1 }}>
-              <Typography variant="h6" component="h3">
-                {selectedGame.title}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {selectedGame.location_name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {formatRelative(new Date(selectedGame.date), new Date())}
-              </Typography>
-              {selectedGame.is_recurring && (
-                <Typography variant="body2" color="primary">
-                  Repeats {selectedGame.recurrence_frequency}
+          {/* Game markers */}
+          {games.map((game) => (
+            <Marker
+              key={game.id}
+              longitude={game.longitude}
+              latitude={game.latitude}
+              anchor="bottom"
+              onClick={e => {
+                e.originalEvent.stopPropagation();
+                onGameSelect(game);
+              }}
+            >
+              <LocationOnIcon 
+                sx={{ 
+                  color: selectedGame?.id === game.id ? 'primary.main' : 'secondary.main',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    color: 'primary.main'
+                  }
+                }} 
+              />
+            </Marker>
+          ))}
+
+          {/* Selected game popup */}
+          {selectedGame && (
+            <Popup
+              latitude={selectedGame.latitude}
+              longitude={selectedGame.longitude}
+              onClose={() => onGameSelect(null)}
+              closeOnClick={false}
+              closeButton={true}
+              maxWidth="300px"
+            >
+              <Box sx={{ p: 1 }}>
+                <Typography variant="h6" component="h3">
+                  {selectedGame.title}
                 </Typography>
-              )}
-              <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => {/* Join game handler */}}
-                  sx={{ flex: 1 }}
-                >
-                  Join Game
-                </Button>
-                {selectedGame.whatsapp_link && (
-                  <IconButton
-                    color="primary"
-                    component="a"
-                    href={selectedGame.whatsapp_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="small"
-                    aria-label="Join WhatsApp group"
-                  >
-                    <WhatsAppIcon />
-                  </IconButton>
+                <Typography variant="body2" color="text.secondary">
+                  {selectedGame.location_name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  {formatRelative(new Date(selectedGame.date), new Date())}
+                </Typography>
+                {selectedGame.is_recurring && (
+                  <Typography variant="body2" color="primary">
+                    Repeats {selectedGame.recurrence_frequency}
+                  </Typography>
                 )}
+                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {/* Join game handler */}}
+                    sx={{ flex: 1 }}
+                  >
+                    Join Game
+                  </Button>
+                  {selectedGame.whatsapp_link && (
+                    <IconButton
+                      color="primary"
+                      component="a"
+                      href={selectedGame.whatsapp_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="small"
+                      aria-label="Join WhatsApp group"
+                    >
+                      <WhatsAppIcon />
+                    </IconButton>
+                  )}
+                </Box>
               </Box>
-            </Box>
-          </Popup>
-        )}
-      </Map>
+            </Popup>
+          )}
+        </Map>
+      ) : (
+        <Box sx={{ 
+          height: '100%', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          bgcolor: 'grey.100',
+          borderRadius: 1
+        }}>
+          <Typography color="error">
+            Map configuration error. Please check console.
+          </Typography>
+        </Box>
+      )}
 
       {/* GPS Button */}
       <Box
@@ -196,17 +213,17 @@ export const MapView: React.FC<MapViewProps> = ({
           position: 'absolute',
           bottom: 16,
           right: 16,
-          zIndex: 1,
+          zIndex: 1
         }}
       >
         <IconButton
           onClick={handleGPSClick}
           sx={{
-            background: 'white',
-            boxShadow: 2,
+            bgcolor: 'background.paper',
+            boxShadow: 1,
             '&:hover': {
-              background: '#f5f5f5',
-            },
+              bgcolor: 'background.paper',
+            }
           }}
         >
           <MyLocationIcon />
