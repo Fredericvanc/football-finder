@@ -1,12 +1,35 @@
 import { supabase } from '../supabase';
-import { Game, CreateGameData, DbGame, DbProfile } from '../types';
+import { Game, CreateGameData } from '../types';
 
-interface SupabaseGame extends Omit<DbGame, 'creator'> {
-  creator: DbProfile[];
+// Type for raw game data from Supabase
+interface SupabaseCreator {
+  id: string;
+  name: string | null;
+  email: string;
 }
 
-const transformDbGameToGame = (dbGame: SupabaseGame): Game => {
+interface DatabaseGame {
+  id: number;
+  created_at: string;
+  title: string;
+  description: string | null;
+  location: string;
+  latitude: number;
+  longitude: number;
+  date: string;
+  max_players: number;
+  skill_level: string | null;
+  creator_id: string;
+  whatsapp_link: string | null;
+  is_recurring: boolean;
+  recurrence_frequency: string | null;
+  profiles?: SupabaseCreator[];
+}
+
+export const transformDbGameToGame = (dbGame: any): Game => {
   console.log('Transforming game:', dbGame);
+  const creator = dbGame.profiles?.[0];
+  
   return {
     id: dbGame.id,
     created_at: dbGame.created_at,
@@ -19,38 +42,33 @@ const transformDbGameToGame = (dbGame: SupabaseGame): Game => {
     date_time: dbGame.date,
     max_players: dbGame.max_players,
     min_players: 2,
-    skill_level: dbGame.skill_level,
+    skill_level: dbGame.skill_level ?? 'all',
     creator_id: dbGame.creator_id,
-    location_name: dbGame.location_name,
+    location_name: dbGame.location,
     whatsapp_link: dbGame.whatsapp_link,
     is_recurring: dbGame.is_recurring,
     recurrence_frequency: dbGame.recurrence_frequency,
-    creator: dbGame.creator && dbGame.creator.length > 0 ? {
-      id: dbGame.creator[0].id,
-      name: dbGame.creator[0].name,
-      email: dbGame.creator[0].email,
+    creator: creator ? {
+      id: creator.id,
+      name: creator.name,
+      email: creator.email,
     } : null,
   };
 };
 
 export const getGames = async (): Promise<Game[]> => {
+  console.log('Fetching games...');
   try {
-    console.log('Fetching games...');
     const { data: games, error } = await supabase
       .from('games')
       .select(`
         *,
-        creator:profiles!games_creator_id_fkey(*)
-      `)
-      .order('date', { ascending: true });
+        profiles(id, name, email)
+      `);
 
-    if (error) {
-      console.error('Error fetching games:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     console.log('Fetched games:', games);
-    return (games || []).map(game => transformDbGameToGame(game as SupabaseGame));
+    return (games || []).map(game => transformDbGameToGame(game));
   } catch (error) {
     console.error('Error in getGames:', error);
     throw error;
@@ -58,55 +76,38 @@ export const getGames = async (): Promise<Game[]> => {
 };
 
 export const createGame = async (gameData: CreateGameData): Promise<Game> => {
+  console.log('Creating game with data:', gameData);
   try {
-    console.log('Creating game with data:', gameData);
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    
-    if (userError) {
-      console.error('Error getting user:', userError);
-      throw userError;
-    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
 
-    if (!userData.user) {
-      throw new Error('No authenticated user found');
-    }
-
-    const gameInsertData = {
+    const gameInsert = {
       title: gameData.title,
-      description: gameData.description || null,
+      description: gameData.description ?? null,
       location: gameData.location,
       latitude: gameData.latitude,
       longitude: gameData.longitude,
       date: gameData.date,
-      max_players: gameData.max_players,
-      skill_level: gameData.skill_level || null,
-      creator_id: userData.user.id,
-      location_name: gameData.location_name || null,
-      whatsapp_link: gameData.whatsapp_link || null,
+      max_players: gameData.max_players || 10,
+      skill_level: gameData.skill_level ?? null,
+      whatsapp_link: gameData.whatsapp_link ?? null,
       is_recurring: gameData.is_recurring || false,
-      recurrence_frequency: gameData.recurrence_frequency || null,
+      recurrence_frequency: gameData.recurrence_frequency ?? null,
+      creator_id: user.id
     };
 
     const { data: game, error } = await supabase
       .from('games')
-      .insert([gameInsertData])
+      .insert([gameInsert])
       .select(`
         *,
-        creator:profiles!games_creator_id_fkey(*)
+        profiles(id, name, email)
       `)
       .single();
 
-    if (error) {
-      console.error('Error creating game:', error);
-      throw error;
-    }
-
-    if (!game) {
-      throw new Error('No game data returned after creation');
-    }
-
+    if (error) throw error;
     console.log('Created game:', game);
-    return transformDbGameToGame(game as SupabaseGame);
+    return transformDbGameToGame(game);
   } catch (error) {
     console.error('Error in createGame:', error);
     throw error;
