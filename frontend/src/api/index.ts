@@ -1,6 +1,6 @@
 import { supabase } from '../supabase';
 import { Game, CreateGameData } from '../types';
-import { transformDbGameToGame } from './games';
+import { transformGame } from './games';
 import { config } from '../config';
 
 const getAuthHeader = () => {
@@ -19,7 +19,7 @@ export async function getGames(): Promise<Game[]> {
       `);
 
     if (error) throw error;
-    return (games || []).map(game => transformDbGameToGame(game));
+    return (games || []).map(game => transformGame(game));
   } catch (error) {
     console.error('Error fetching games:', error);
     throw error;
@@ -56,9 +56,28 @@ export async function createGame(gameData: CreateGameData): Promise<Game> {
     if (error) throw error;
     if (!data) throw new Error('No data returned from insert');
     
-    return transformDbGameToGame(data);
+    return transformGame(data);
   } catch (error) {
     console.error('Error creating game:', error);
     throw error;
   }
 }
+
+export const getGameById = async (id: number): Promise<Game | null> => {
+  try {
+    const { data: game, error } = await supabase
+      .from('games')
+      .select(`
+        *,
+        profiles(id, name, email)
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return game ? transformGame(game) : null;
+  } catch (error) {
+    console.error('Error in getGameById:', error);
+    throw error;
+  }
+};

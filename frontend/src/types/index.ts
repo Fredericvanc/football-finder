@@ -18,15 +18,12 @@ export interface Game {
   latitude: number;
   longitude: number;
   date: string;
-  date_time?: string; // For backward compatibility
   max_players: number;
-  min_players?: number; // For backward compatibility
   skill_level: string | null;
   whatsapp_link: string | null;
   is_recurring: boolean;
   recurrence_frequency: string | null;
   creator: Creator | null;
-  creator_id?: string; // For backward compatibility
   created_at: string;
 }
 
