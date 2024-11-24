@@ -1,5 +1,7 @@
 import axios from 'axios';
+import { supabase } from '../supabase';
 import { Game, Location, CreateGameData } from '../types';
+import { transformDbGameToGame } from './games';
 
 const API_BASE_URL = 'http://localhost:5001/api';
 
@@ -8,64 +10,61 @@ const getAuthHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-export const getGames = async (): Promise<Game[]> => {
+export async function getGames(): Promise<Game[]> {
+  console.log('Fetching games...');
   try {
-    console.log('Fetching games...');
-    const response = await axios.get(`${API_BASE_URL}/games`, {
-      headers: getAuthHeader(),
-    });
-    
-    // Transform the response to match our frontend types
-    const games = response.data.map((game: any) => ({
-      ...game,
-      date_time: game.date, // Use date as date_time for now
-      location_name: game.location, // Use location as location_name for now
-    }));
+    const { data: games, error } = await supabase
+      .from('games')
+      .select(`
+        *,
+        creator:user_id (
+          id,
+          name,
+          email
+        )
+      `);
+
+    if (error) throw error;
     
     console.log('Games fetched successfully:', games);
-    return games;
+    return games.map(transformDbGameToGame);
   } catch (error) {
     console.error('Error fetching games:', error);
     throw error;
   }
 };
 
-export const createGame = async (gameData: CreateGameData): Promise<Game> => {
+export async function createGame(gameData: CreateGameData): Promise<Game> {
+  console.log('Creating game with data:', gameData);
   try {
-    console.log('Creating game with data:', gameData);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data: game, error } = await supabase
+      .from('games')
+      .insert([{
+        title: gameData.title,
+        description: gameData.description,
+        location_name: gameData.location,
+        latitude: gameData.latitude,
+        longitude: gameData.longitude,
+        date_time: gameData.date,
+        whatsapp_link: gameData.whatsappLink,
+        user_id: user.id
+      }])
+      .select(`
+        *,
+        creator:user_id (
+          id,
+          name,
+          email
+        )
+      `)
+      .single();
+
+    if (error) throw error;
     
-    // Transform the data to match backend expectations
-    const backendData = {
-      title: gameData.title,
-      description: gameData.description,
-      location: gameData.location_name || gameData.location,
-      latitude: gameData.latitude,
-      longitude: gameData.longitude,
-      date: gameData.date_time || gameData.date,
-      max_players: gameData.max_players,
-      min_players: gameData.min_players,
-      skill_level: gameData.skill_level,
-      is_recurring: gameData.is_recurring,
-      recurrence_frequency: gameData.recurrence_frequency,
-      whatsapp_link: gameData.whatsapp_link,
-    };
-
-    const response = await axios.post(`${API_BASE_URL}/games`, backendData, {
-      headers: {
-        ...getAuthHeader(),
-        'Content-Type': 'application/json',
-      },
-    });
-
-    // Transform the response to match our frontend types
-    const createdGame: Game = {
-      ...response.data,
-      date_time: response.data.date, // Use date as date_time
-      location_name: response.data.location, // Use location as location_name
-    };
-
-    console.log('Game created successfully:', createdGame);
-    return createdGame;
+    return transformDbGameToGame(game);
   } catch (error) {
     console.error('Error creating game:', error);
     throw error;
