@@ -75,23 +75,25 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
         if (error) throw error;
         if (!data.user) throw new Error('No user data returned');
 
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              email,
-              name,
-            },
-          ]);
+        // Wait for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-        if (profileError) throw profileError;
+        // Get the created profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Profile fetch error:', profileError);
+          throw new Error('Failed to fetch profile. Please try again.');
+        }
 
         onSuccess({
           id: data.user.id,
           email: data.user.email!,
-          name: name || null,
+          name: profileData.name,
         });
         handleClose();
       }
