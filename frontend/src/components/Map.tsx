@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Map, { Marker, Popup, NavigationControl } from 'react-map-gl';
-import { Card, CardContent, Typography, IconButton, Box, Button, useTheme } from '@mui/material';
+import { Card, CardContent, Typography, IconButton, Box, Button, useTheme, Stack } from '@mui/material';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { formatRelative } from 'date-fns';
 import { Game, Location } from '../types';
 import { config } from '../config';
@@ -49,6 +50,29 @@ export const MapView: React.FC<MapViewProps> = ({
     zoom: 13
   });
 
+  // Track map loading state
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+
+  // Memoize the map style
+  const mapStyle = useMemo(() => 
+    theme.palette.mode === 'dark' 
+      ? "mapbox://styles/mapbox/dark-v11"
+      : "mapbox://styles/mapbox/streets-v12"
+  , [theme.palette.mode]);
+
+  // Memoize popup style
+  const popupStyle = useMemo(() => ({
+    '.mapboxgl-popup-content': {
+      backgroundColor: theme.palette.mode === 'dark' ? '#242424' : '#fff',
+      color: theme.palette.mode === 'dark' ? '#fff' : '#000',
+      padding: '12px',
+      borderRadius: '4px',
+    },
+    '.mapboxgl-popup-tip': {
+      borderTopColor: theme.palette.mode === 'dark' ? '#242424' : '#fff',
+    }
+  }), [theme.palette.mode]);
+
   useEffect(() => {
     if (config.mapboxToken) {
       console.log('Mapbox initialized with token:', config.mapboxToken.substring(0, 10) + '...');
@@ -63,14 +87,13 @@ export const MapView: React.FC<MapViewProps> = ({
     }));
   }, [currentLocation]);
 
-  // Update view state when center location changes
   useEffect(() => {
     if (centerLocation) {
       setViewState(prev => ({
         ...prev,
         latitude: centerLocation.latitude,
         longitude: centerLocation.longitude,
-        zoom: 15, // Zoom in closer when centering on a new game
+        zoom: 15,
       }));
     }
   }, [centerLocation]);
@@ -84,151 +107,160 @@ export const MapView: React.FC<MapViewProps> = ({
     }));
   };
 
-  return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {config.mapboxToken ? (
-        <Map
-          mapboxAccessToken={config.mapboxToken}
-          mapStyle={theme.palette.mode === 'dark' 
-            ? "mapbox://styles/mapbox/dark-v11"
-            : "mapbox://styles/mapbox/light-v11"
-          }
-          {...viewState}
-          onMove={evt => setViewState(evt.viewState)}
-          style={{ width: '100%', height: '100%' }}
-          onClick={() => onGameSelect(null)}
-        >
-          <NavigationControl position="top-right" />
-          
-          {/* Current location marker */}
-          <Marker
-            longitude={currentLocation.longitude}
-            latitude={currentLocation.latitude}
-            anchor="bottom"
-          >
-            <div style={{ 
-              width: '12px', 
-              height: '12px', 
-              background: '#4CAF50', 
-              borderRadius: '50%',
-              border: '2px solid white',
-              boxShadow: '0 0 0 2px rgba(76, 175, 80, 0.3)'
-            }} />
-          </Marker>
+  const renderMap = () => (
+    <Map
+      mapboxAccessToken={config.mapboxToken}
+      mapStyle={mapStyle}
+      {...viewState}
+      onMove={evt => setViewState(evt.viewState)}
+      style={{ 
+        width: '100%', 
+        height: '100%',
+        opacity: isMapLoaded ? 1 : 0,
+        transition: 'opacity 0.3s ease-in-out'
+      }}
+      onClick={() => onGameSelect(null)}
+      onLoad={() => setIsMapLoaded(true)}
+      onRemove={() => setIsMapLoaded(false)}
+      maxZoom={20}
+      minZoom={3}
+      attributionControl={false}
+      renderWorldCopies={false}
+    >
+      <NavigationControl position="top-right" />
+      
+      {/* Current location marker */}
+      <Marker
+        longitude={currentLocation.longitude}
+        latitude={currentLocation.latitude}
+        anchor="bottom"
+      >
+        <MyLocationIcon color="primary" />
+      </Marker>
 
-          {/* Game markers */}
-          {games.map((game) => (
-            <Marker
-              key={game.id}
-              longitude={game.longitude}
-              latitude={game.latitude}
-              anchor="bottom"
-              onClick={e => {
-                e.originalEvent.stopPropagation();
-                onGameSelect(game);
+      {/* Game markers */}
+      {games.map((game) => (
+        <Marker
+          key={game.id}
+          longitude={game.longitude}
+          latitude={game.latitude}
+          anchor="bottom"
+          onClick={(e) => {
+            e.originalEvent.stopPropagation();
+            onGameSelect(game);
+          }}
+        >
+          <LocationOnIcon
+            sx={{
+              color: selectedGame?.id === game.id ? 'primary.main' : 'text.primary',
+              cursor: 'pointer',
+              '&:hover': {
+                color: 'primary.main',
+              },
+            }}
+          />
+        </Marker>
+      ))}
+
+      {/* Game popup */}
+      {selectedGame && (
+        <Popup
+          longitude={selectedGame.longitude}
+          latitude={selectedGame.latitude}
+          anchor="bottom"
+          onClose={() => onGameSelect(null)}
+          closeButton={false}
+          offset={[0, -32] as [number, number]}
+          className="game-popup"
+        >
+          <Stack spacing={1.5} sx={{ minWidth: 200, p: 1 }}>
+            <Typography 
+              variant="h6" 
+              color="text.primary"
+              sx={{ 
+                fontSize: '1.1rem',
+                fontWeight: 500
               }}
             >
-              <LocationOnIcon 
+              {selectedGame.title}
+            </Typography>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <LocationOnIcon sx={{ color: 'text.secondary', fontSize: '1rem' }} />
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: '0.9rem' }}
+              >
+                {selectedGame.location_name || selectedGame.location}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <AccessTimeIcon sx={{ color: 'text.secondary', fontSize: '1rem' }} />
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: '0.9rem' }}
+              >
+                {formatRelative(new Date(selectedGame.date), new Date())}
+              </Typography>
+            </Box>
+
+            {selectedGame.whatsapp_link && (
+              <Button
+                variant="text"
+                color="success"
+                startIcon={<WhatsAppIcon />}
+                fullWidth
+                href={selectedGame.whatsapp_link}
+                target="_blank"
+                rel="noopener noreferrer"
                 sx={{ 
-                  color: selectedGame?.id === game.id ? 'primary.main' : 'secondary.main',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    color: 'primary.main'
-                  }
-                }} 
-              />
-            </Marker>
-          ))}
-
-          {/* Selected game popup */}
-          {selectedGame && (
-            <Popup
-              latitude={selectedGame.latitude}
-              longitude={selectedGame.longitude}
-              onClose={() => onGameSelect(null)}
-              closeOnClick={false}
-              closeButton={true}
-              maxWidth="300px"
-            >
-              <Box sx={{ p: 1 }}>
-                <Typography variant="h6" component="h3">
-                  {selectedGame.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {selectedGame.location_name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  {formatRelative(new Date(selectedGame.date), new Date())}
-                </Typography>
-                {selectedGame.is_recurring && (
-                  <Typography variant="body2" color="primary">
-                    Repeats {selectedGame.recurrence_frequency}
-                  </Typography>
-                )}
-                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => {/* Join game handler */}}
-                    sx={{ flex: 1 }}
-                  >
-                    Join Game
-                  </Button>
-                  {selectedGame.whatsapp_link && (
-                    <IconButton
-                      color="primary"
-                      component="a"
-                      href={selectedGame.whatsapp_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      size="small"
-                      aria-label="Join WhatsApp group"
-                    >
-                      <WhatsAppIcon />
-                    </IconButton>
-                  )}
-                </Box>
-              </Box>
-            </Popup>
-          )}
-        </Map>
-      ) : (
-        <Box sx={{ 
-          height: '100%', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          bgcolor: 'grey.100',
-          borderRadius: 1
-        }}>
-          <Typography color="error">
-            Map configuration error. Please check console.
-          </Typography>
-        </Box>
+                  mt: 0.5,
+                  textTransform: 'none',
+                  fontSize: '0.9rem'
+                }}
+              >
+                Join WhatsApp Group
+              </Button>
+            )}
+          </Stack>
+        </Popup>
       )}
+    </Map>
+  );
 
-      {/* GPS Button */}
-      <Box
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <style>
+        {`
+          .mapboxgl-popup-content {
+            background-color: ${theme.palette.mode === 'dark' ? '#242424' : '#fff'} !important;
+          }
+          .mapboxgl-popup-tip {
+            border-top-color: ${theme.palette.mode === 'dark' ? '#242424' : '#fff'} !important;
+          }
+        `}
+      </style>
+      {config.mapboxToken && renderMap()}
+      
+      {/* GPS button */}
+      <IconButton
+        onClick={handleGPSClick}
         sx={{
           position: 'absolute',
           bottom: 16,
           right: 16,
-          zIndex: 1
+          backgroundColor: 'background.paper',
+          boxShadow: 1,
+          '&:hover': {
+            backgroundColor: 'background.paper',
+          },
         }}
       >
-        <IconButton
-          onClick={handleGPSClick}
-          sx={{
-            bgcolor: 'background.paper',
-            boxShadow: 1,
-            '&:hover': {
-              bgcolor: 'background.paper',
-            }
-          }}
-        >
-          <MyLocationIcon />
-        </IconButton>
-      </Box>
+        <MyLocationIcon />
+      </IconButton>
     </div>
   );
 };
