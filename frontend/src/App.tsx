@@ -66,35 +66,88 @@ function App() {
   };
 
   useEffect(() => {
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsLoggedIn(!!session);
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          name: session.user.user_metadata.name || null,
-        });
+    const fetchGames = async () => {
+      try {
+        const fetchedGames = await getGames();
+        console.log('Fetched games:', fetchedGames);
+        setGames(fetchedGames);
+        setFilteredGames(fetchedGames);
+      } catch (error) {
+        console.error('Error fetching games:', error);
       }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email!,
-          name: session.user.user_metadata.name || null,
-        });
-      } else {
-        setUser(null);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
     };
+
+    fetchGames();
+  }, []);
+
+  useEffect(() => {
+    const initializeSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+      if (session?.user) {
+        try {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('name, email')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) throw profileError;
+
+          setUser({
+            id: session.user.id,
+            email: session.user.email!,
+            name: profileData?.name || null,
+          });
+        } catch (error) {
+          console.error('Error initializing session:', error);
+          setUser({
+            id: session.user.id,
+            email: session.user.email!,
+            name: null,
+          });
+        }
+      }
+      
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        setIsLoggedIn(!!session);
+        if (session?.user) {
+          try {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('name, email')
+              .eq('id', session.user.id)
+              .single();
+
+            if (profileError) throw profileError;
+
+            setUser({
+              id: session.user.id,
+              email: session.user.email!,
+              name: profileData?.name || null,
+            });
+          } catch (error) {
+            console.error('Error handling auth change:', error);
+            setUser({
+              id: session.user.id,
+              email: session.user.email!,
+              name: null,
+            });
+          }
+        } else {
+          setUser(null);
+          setGames([]);
+          setFilteredGames([]);
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    };
+
+    initializeSession();
   }, []);
 
   useEffect(() => {
@@ -122,21 +175,6 @@ function App() {
       setLocationError('Geolocation is not supported by your browser.');
     }
   }, []);
-
-  useEffect(() => {
-    const fetchGames = async () => {
-      try {
-        const fetchedGames = await getGames();
-        console.log('Fetched games:', fetchedGames);
-        setGames(fetchedGames);
-        setFilteredGames(fetchedGames);
-      } catch (error) {
-        console.error('Error fetching games:', error);
-      }
-    };
-
-    fetchGames();
-  }, [currentLocation]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -219,15 +257,25 @@ function App() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsLoggedIn(false);
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setIsLoggedIn(false);
+      setGames([]);
+      setFilteredGames([]);
+      localStorage.clear();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const handleAuthSuccess = (user: User) => {
     setUser(user);
     setIsLoggedIn(true);
-    setIsAuthDialogOpen(false);
+    getGames().then(fetchedGames => {
+      setGames(fetchedGames);
+      setFilteredGames(fetchedGames);
+    });
   };
 
   return (
@@ -257,7 +305,7 @@ function App() {
                 color: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff'
               }}
             >
-              Football Finder
+              Why Not Play Outside?
             </Typography>
             <IconButton
               onClick={toggleDarkMode}
@@ -276,7 +324,7 @@ function App() {
                     color: theme.palette.text.primary
                   }}
                 >
-                  {user?.name || user?.email}
+                  {user?.name}
                 </Typography>
                 <Button 
                   variant="outlined"
@@ -284,10 +332,6 @@ function App() {
                   sx={{ 
                     color: theme.palette.text.primary,
                     borderColor: theme.palette.text.primary,
-                    '&:hover': {
-                      borderColor: theme.palette.text.primary,
-                      backgroundColor: theme.palette.action.hover,
-                    }
                   }}
                 >
                   Logout
@@ -300,10 +344,6 @@ function App() {
                 sx={{ 
                   color: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff',
                   borderColor: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff',
-                  '&:hover': {
-                    borderColor: isLoggedIn || scrolled ? theme.palette.text.primary : '#fff',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  }
                 }}
               >
                 Login

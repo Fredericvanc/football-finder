@@ -60,6 +60,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
           email: data.user.email!,
           name: profileData.name,
         });
+        handleClose();
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -92,6 +93,7 @@ export const AuthDialog: React.FC<AuthDialogProps> = ({
           email: data.user.email!,
           name: name || null,
         });
+        handleClose();
       }
     } catch (error: any) {
       console.error('Auth error:', error);

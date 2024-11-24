@@ -18,12 +18,15 @@ export interface Game {
   latitude: number;
   longitude: number;
   date: string;
+  date_time: string;
   max_players: number;
+  min_players: number;
   skill_level: string | null;
   whatsapp_link: string | null;
   is_recurring: boolean;
   recurrence_frequency: string | null;
   creator: Creator | null;
+  creator_id: string;
   created_at: string;
 }
 

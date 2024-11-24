@@ -126,6 +126,11 @@ export const MapView: React.FC<MapViewProps> = ({
       minZoom={3}
       attributionControl={false}
       renderWorldCopies={false}
+      fog={{
+        range: [0.8, 8],
+        color: theme.palette.mode === 'dark' ? '#242424' : '#ffffff',
+        'horizon-blend': 0.1
+      }}
     >
       <NavigationControl position="top-right" />
       

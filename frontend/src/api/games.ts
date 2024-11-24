@@ -25,19 +25,19 @@ interface DatabaseGame {
 }
 
 export const transformGame = (dbGame: DatabaseGame): Game => {
-  console.log('Transforming game:', dbGame);
   const creator = dbGame.profiles?.[0];
-  
   return {
     id: dbGame.id,
     title: dbGame.title,
     description: dbGame.description,
     location: dbGame.location,
-    location_name: dbGame.location_name || dbGame.location,
+    location_name: dbGame.location_name,
     latitude: dbGame.latitude,
     longitude: dbGame.longitude,
     date: dbGame.date,
+    date_time: dbGame.date, // Using date as date_time
     max_players: dbGame.max_players,
+    min_players: 1, // Default value
     skill_level: dbGame.skill_level,
     whatsapp_link: dbGame.whatsapp_link,
     is_recurring: dbGame.is_recurring,
@@ -45,9 +45,10 @@ export const transformGame = (dbGame: DatabaseGame): Game => {
     creator: creator ? {
       id: creator.id,
       name: creator.name || 'Anonymous',
-      email: creator.email,
+      email: creator.email
     } : null,
-    created_at: dbGame.created_at,
+    creator_id: dbGame.creator_id,
+    created_at: dbGame.created_at
   };
 };
 
@@ -57,27 +58,21 @@ export const getGames = async (): Promise<Game[]> => {
     const { data: games, error } = await supabase
       .from('games')
       .select(`
-        id,
-        title,
-        description,
-        location,
-        location_name,
-        latitude,
-        longitude,
-        date,
-        max_players,
-        skill_level,
-        whatsapp_link,
-        is_recurring,
-        recurrence_frequency,
-        created_at,
-        creator_id,
-        profiles(id, name, email)
-      `);
+        *,
+        profiles (
+          id,
+          name,
+          email
+        )
+      `)
+      .order('date', { ascending: true });
 
-    if (error) throw error;
-    console.log('Fetched games:', games);
-    return (games || []).map(game => transformGame(game));
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+
+    return (games || []).map(game => transformGame(game as DatabaseGame));
   } catch (error) {
     console.error('Error in getGames:', error);
     throw error;
@@ -90,47 +85,37 @@ export const createGame = async (gameData: CreateGameData): Promise<Game> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const gameInsert = {
-      title: gameData.title,
-      description: gameData.description ?? null,
-      location: gameData.location,
-      latitude: gameData.latitude,
-      longitude: gameData.longitude,
-      date: gameData.date,
-      max_players: gameData.max_players || 10,
-      skill_level: gameData.skill_level ?? null,
-      whatsapp_link: gameData.whatsapp_link ?? null,
-      is_recurring: gameData.is_recurring || false,
-      recurrence_frequency: gameData.recurrence_frequency ?? null,
-      creator_id: user.id
-    };
-
     const { data: game, error } = await supabase
       .from('games')
-      .insert([gameInsert])
+      .insert([
+        {
+          title: gameData.title,
+          description: gameData.description ?? null,
+          location: gameData.location,
+          latitude: gameData.latitude,
+          longitude: gameData.longitude,
+          date: gameData.date,
+          max_players: gameData.max_players || 10,
+          skill_level: gameData.skill_level ?? null,
+          whatsapp_link: gameData.whatsapp_link ?? null,
+          is_recurring: gameData.is_recurring || false,
+          recurrence_frequency: gameData.recurrence_frequency ?? null,
+          creator_id: user.id
+        }
+      ])
       .select(`
-        id,
-        title,
-        description,
-        location,
-        location_name,
-        latitude,
-        longitude,
-        date,
-        max_players,
-        skill_level,
-        whatsapp_link,
-        is_recurring,
-        recurrence_frequency,
-        created_at,
-        creator_id,
-        profiles(id, name, email)
+        *,
+        profiles (
+          id,
+          name,
+          email
+        )
       `)
       .single();
 
     if (error) throw error;
-    console.log('Created game:', game);
-    return transformGame(game);
+    
+    return transformGame(game as DatabaseGame);
   } catch (error) {
     console.error('Error in createGame:', error);
     throw error;
