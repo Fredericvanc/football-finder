@@ -151,8 +151,8 @@ function App() {
 
           setUser({
             id: session.user.id,
-            email: session.user.email!,
-            name: profileData?.name || null,
+            email: session.user.email || '',
+            name: profileData?.name || '',
           });
         } catch (error) {
           console.error('Error initializing session:', error);
@@ -160,15 +160,27 @@ function App() {
           
           setUser({
             id: session.user.id,
-            email: session.user.email!,
+            email: session.user.email || '',
             name: null,
           });
         }
       }
       
       // Listen for auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-        console.log('Auth state changed:', { event: _event, hasSession: !!session });
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed:', { event, hasSession: !!session });
+        
+        // Check for password update first
+        const passwordJustUpdated = localStorage.getItem('passwordJustUpdated');
+        console.log('Password update flag:', passwordJustUpdated);
+        
+        if (event === 'USER_UPDATED' && passwordJustUpdated) {
+          console.log('Password update detected, redirecting...');
+          localStorage.removeItem('passwordJustUpdated');
+          window.location.href = '/';
+          return; // Exit early after redirect
+        }
+
         if (!mounted) return;
         
         setIsLoggedIn(!!session);
@@ -180,31 +192,27 @@ function App() {
               .eq('id', session.user.id)
               .single();
 
-            if (profileError) throw profileError;
-            if (!mounted) return;
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+              return;
+            }
 
             setUser({
               id: session.user.id,
-              email: session.user.email!,
-              name: profileData?.name || null,
+              email: session.user.email || '',
+              name: profileData?.name || '',
             });
+
           } catch (error) {
-            console.error('Error handling auth change:', error);
-            if (!mounted) return;
-            
-            setUser({
-              id: session.user.id,
-              email: session.user.email!,
-              name: null,
-            });
+            console.error('Error in profile fetch:', error);
           }
         } else {
           setUser(null);
         }
 
         // Only fetch games on actual auth state changes
-        if (_event !== 'INITIAL_SESSION') {
-          console.log('Auth event triggered games refresh:', _event);
+        if (event !== 'INITIAL_SESSION') {
+          console.log('Auth event triggered games refresh:', event);
           fetchGames();
         }
       });

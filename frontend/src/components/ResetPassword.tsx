@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { Container, Box, TextField, Button, Alert } from '@mui/material';
@@ -20,32 +20,34 @@ export default function ResetPassword() {
         throw new Error('Passwords do not match');
       }
 
-      console.log('Updating password...');
+      console.log('Starting password update process...');
+      
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user);
+
+      // Set flag before password update
+      localStorage.setItem('passwordJustUpdated', 'true');
+
+      console.log('Attempting to update password...');
       const { data, error } = await supabase.auth.updateUser({
         password: password
       });
 
       if (error) {
         console.error('Update error:', error);
+        localStorage.removeItem('passwordJustUpdated');
         throw error;
       }
 
-      console.log('Password updated successfully, redirecting...');
-      
-      // Show success message briefly before redirect
+      // Add a small delay before showing success message
+      await new Promise(resolve => setTimeout(resolve, 500));
       setError('Password updated successfully!');
       
-      // Use both immediate and delayed redirect for reliability
-      navigate('/', { replace: true });
-      
-      // Backup redirect
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1500);
-
     } catch (error: any) {
       console.error('Error:', error);
       setError(error.message);
+      localStorage.removeItem('passwordJustUpdated');
     } finally {
       setLoading(false);
     }
@@ -75,8 +77,8 @@ export default function ResetPassword() {
           />
           
           <TextField
-            label="Confirm Password"
             type="password"
+            label="Confirm Password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             disabled={loading}
