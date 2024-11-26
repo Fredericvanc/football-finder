@@ -12,7 +12,7 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError('');
     setLoading(true);
 
     try {
@@ -25,18 +25,23 @@ export default function ResetPassword() {
         password: password
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update error:', error);
+        throw error;
+      }
+
+      console.log('Password updated successfully, redirecting...');
       
-      console.log('Password updated successfully, attempting to redirect...');
+      // Show success message briefly before redirect
+      setError('Password updated successfully!');
       
-      // Try both immediate and delayed redirect
+      // Use both immediate and delayed redirect for reliability
       navigate('/', { replace: true });
       
-      // Backup: try redirect with timeout
+      // Backup redirect
       setTimeout(() => {
-        console.log('Attempting delayed redirect...');
         window.location.href = '/';
-      }, 1000);
+      }, 1500);
 
     } catch (error: any) {
       console.error('Error:', error);
@@ -53,7 +58,7 @@ export default function ResetPassword() {
           <h2>Reset Password</h2>
           
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity={error === 'Password updated successfully!' ? 'success' : 'error'} sx={{ mb: 2 }}>
               {error}
             </Alert>
           )}

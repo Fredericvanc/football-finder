@@ -15,8 +15,44 @@ import { supabase } from './supabase';
 import { ThemeProvider } from '@mui/material/styles';
 import { createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
+
+function CreateGameButton({ isLoggedIn, onClick }: { isLoggedIn: boolean; onClick: () => void }) {
+  const location = useLocation();
+  
+  if (!isLoggedIn || location.pathname === '/reset-password') {
+    return null;
+  }
+
+  return (
+    <Button
+      variant="contained"
+      onClick={onClick}
+      startIcon={<AddIcon />}
+      sx={{
+        position: 'fixed',
+        bottom: 16,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '600px',
+        height: '48px',
+        mx: 2,
+        borderRadius: '24px',
+        textTransform: 'none',
+        fontSize: '1.1rem',
+        fontWeight: 600,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        '&:hover': {
+          boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
+        },
+      }}
+    >
+      Create New Game
+    </Button>
+  );
+}
 
 function App() {
   const [games, setGames] = useState<Game[]>([]);
@@ -459,33 +495,10 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
           </Routes>
 
-          {isLoggedIn && (
-            <Button
-              variant="contained"
-              onClick={() => setIsCreateGameOpen(true)}
-              startIcon={<AddIcon />}
-              sx={{
-                position: 'fixed',
-                bottom: 16,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '100%',
-                maxWidth: '600px',
-                height: '48px',
-                mx: 2,
-                borderRadius: '24px',
-                textTransform: 'none',
-                fontSize: '1.1rem',
-                fontWeight: 600,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                '&:hover': {
-                  boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
-                },
-              }}
-            >
-              Create New Game
-            </Button>
-          )}
+          <CreateGameButton 
+            isLoggedIn={isLoggedIn} 
+            onClick={() => setIsCreateGameOpen(true)} 
+          />
 
           <CreateGameForm
             open={isCreateGameOpen}
