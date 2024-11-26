@@ -10,10 +10,12 @@ import { GameList, GameFilters } from './components/GameList';
 import { getGames, createGame } from './api';
 import { Game, CreateGameData, User, Location } from './types/index';
 import { AuthDialog } from './components/AuthDialog';
+import ResetPassword from './components/ResetPassword';
 import { supabase } from './supabase';
 import { ThemeProvider } from '@mui/material/styles';
 import { createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 function App() {
@@ -223,6 +225,18 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    // Check for showLogin parameter in URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('showLogin')) {
+      setIsAuthDialogOpen(true);
+      // Remove the parameter from URL
+      params.delete('showLogin');
+      const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, []);
+
   const handleCreateGame = async (gameData: CreateGameData): Promise<void> => {
     try {
       console.log('Creating game with data:', gameData);
@@ -309,181 +323,191 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <div className="App">
-        <AppBar 
-          position="fixed" 
-          elevation={0} 
-          sx={{ 
-            background: isLoggedIn
-              ? theme.palette.background.paper
-              : 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)',
-            zIndex: (theme) => theme.zIndex.drawer + 1,
-            '& .MuiToolbar-root': {
-              transition: 'all 0.3s ease',
-            }
-          }}
-        >
-          <Toolbar>
-            <Typography 
-              variant="h6" 
-              component="div" 
-              sx={{ 
-                flexGrow: 1, 
-                color: isLoggedIn ? theme.palette.text.primary : '#fff'
-              }}
-            >
-              Why Not Play Outside?
-            </Typography>
-            <IconButton
-              onClick={toggleDarkMode}
-              sx={{ 
-                mr: 2, 
-                color: isLoggedIn ? theme.palette.text.primary : '#fff'
-              }}
-            >
-              {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
-            </IconButton>
-            {isLoggedIn ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    color: theme.palette.text.primary
-                  }}
-                >
-                  {user?.name}
-                </Typography>
-                <Button 
-                  variant="outlined"
-                  onClick={handleLogout}
-                  sx={{ 
-                    color: theme.palette.text.primary,
-                    borderColor: theme.palette.text.primary,
-                  }}
-                >
-                  Logout
-                </Button>
-              </Box>
-            ) : (
-              <Button 
-                variant="outlined"
-                onClick={handleLogin}
-                sx={{ 
-                  color: isLoggedIn ? theme.palette.text.primary : '#fff',
-                  borderColor: isLoggedIn ? theme.palette.text.primary : '#fff',
-                }}
-              >
-                Login
-              </Button>
-            )}
-          </Toolbar>
-        </AppBar>
-
-        <WelcomeBanner isLoggedIn={isLoggedIn} />
-
-        <Box sx={{ 
-          flexGrow: 1, 
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
-          p: 3,
-          pt: isLoggedIn ? 10 : 0,
-          mb: 8,
-        }}>
-          <Box sx={{ 
-            display: 'flex',
-            gap: 3,
-            flexDirection: { xs: 'column', md: 'row' },
-            minHeight: '500px',
-          }}>
-            <Box sx={{ 
-              flex: 1,
-              minWidth: { xs: '100%', md: '400px' },
-              maxWidth: { md: '400px' },
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 2,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-            }}>
-              <GameList
-                games={filteredGames}
-                selectedGame={selectedGame}
-                onGameSelect={handleGameSelect}
-                onFilterChange={handleFilterChange}
-              />
-            </Box>
-
-            <Box sx={{ 
-              flex: 2,
-              height: { xs: '400px', md: '600px' },
-              position: 'relative',
-              borderRadius: 2,
-              overflow: 'hidden',
-              border: '1px solid',
-              borderColor: 'divider',
-            }}>
-              <MapView
-                games={filteredGames}
-                currentLocation={currentLocation}
-                selectedGame={selectedGame}
-                onGameSelect={handleGameSelect}
-                centerLocation={centerLocation}
-              />
-            </Box>
-          </Box>
-        </Box>
-
-        {isLoggedIn && (
-          <Button
-            variant="contained"
-            onClick={() => setIsCreateGameOpen(true)}
-            startIcon={<AddIcon />}
-            sx={{
-              position: 'fixed',
-              bottom: 16,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '100%',
-              maxWidth: '600px',
-              height: '48px',
-              mx: 2,
-              borderRadius: '24px',
-              textTransform: 'none',
-              fontSize: '1.1rem',
-              fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              '&:hover': {
-                boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
-              },
+      <Router>
+        <div className="App">
+          <AppBar 
+            position="fixed" 
+            elevation={0} 
+            sx={{ 
+              background: isLoggedIn
+                ? theme.palette.background.paper
+                : 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.15) 100%)',
+              zIndex: (theme) => theme.zIndex.drawer + 1,
+              '& .MuiToolbar-root': {
+                transition: 'all 0.3s ease',
+              }
             }}
           >
-            Create New Game
-          </Button>
-        )}
+            <Toolbar>
+              <Typography 
+                variant="h6" 
+                component="div" 
+                sx={{ 
+                  flexGrow: 1, 
+                  color: isLoggedIn ? theme.palette.text.primary : '#fff'
+                }}
+              >
+                Why Not Play Outside?
+              </Typography>
+              <IconButton
+                onClick={toggleDarkMode}
+                sx={{ 
+                  mr: 2, 
+                  color: isLoggedIn ? theme.palette.text.primary : '#fff'
+                }}
+              >
+                {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
+              </IconButton>
+              {isLoggedIn ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      color: theme.palette.text.primary
+                    }}
+                  >
+                    {user?.name}
+                  </Typography>
+                  <Button 
+                    variant="outlined"
+                    onClick={handleLogout}
+                    sx={{ 
+                      color: theme.palette.text.primary,
+                      borderColor: theme.palette.text.primary,
+                    }}
+                  >
+                    Logout
+                  </Button>
+                </Box>
+              ) : (
+                <Button 
+                  variant="outlined"
+                  onClick={handleLogin}
+                  sx={{ 
+                    color: isLoggedIn ? theme.palette.text.primary : '#fff',
+                    borderColor: isLoggedIn ? theme.palette.text.primary : '#fff',
+                  }}
+                >
+                  Login
+                </Button>
+              )}
+            </Toolbar>
+          </AppBar>
 
-        <CreateGameForm
-          open={isCreateGameOpen}
-          onClose={() => setIsCreateGameOpen(false)}
-          onSubmit={handleCreateGame}
-          currentLocation={currentLocation}
-        />
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <>
+                  <WelcomeBanner isLoggedIn={isLoggedIn} />
+                  <Box sx={{ 
+                    flexGrow: 1, 
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 3,
+                    p: 3,
+                    pt: isLoggedIn ? 10 : 0,
+                    mb: 8,
+                  }}>
+                    <Box sx={{ 
+                      display: 'flex',
+                      gap: 3,
+                      flexDirection: { xs: 'column', md: 'row' },
+                      minHeight: '500px',
+                    }}>
+                      <Box sx={{ 
+                        flex: 1,
+                        minWidth: { xs: '100%', md: '400px' },
+                        maxWidth: { md: '400px' },
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}>
+                        <GameList
+                          games={filteredGames}
+                          selectedGame={selectedGame}
+                          onGameSelect={handleGameSelect}
+                          onFilterChange={handleFilterChange}
+                        />
+                      </Box>
 
-        <AuthDialog
-          open={isAuthDialogOpen}
-          onClose={() => setIsAuthDialogOpen(false)}
-          onSuccess={handleAuthSuccess}
-        />
+                      <Box sx={{ 
+                        flex: 2,
+                        height: { xs: '400px', md: '600px' },
+                        position: 'relative',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}>
+                        <MapView
+                          games={filteredGames}
+                          currentLocation={currentLocation}
+                          selectedGame={selectedGame}
+                          onGameSelect={handleGameSelect}
+                          centerLocation={centerLocation}
+                        />
+                      </Box>
+                    </Box>
+                  </Box>
+                </>
+              }
+            />
+            <Route path="/reset-password" element={<ResetPassword />} />
+          </Routes>
 
-        <Snackbar
-          open={!!locationError}
-          message={locationError}
-          autoHideDuration={6000}
-          onClose={() => setLocationError('')}
-        />
+          {isLoggedIn && (
+            <Button
+              variant="contained"
+              onClick={() => setIsCreateGameOpen(true)}
+              startIcon={<AddIcon />}
+              sx={{
+                position: 'fixed',
+                bottom: 16,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '100%',
+                maxWidth: '600px',
+                height: '48px',
+                mx: 2,
+                borderRadius: '24px',
+                textTransform: 'none',
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                '&:hover': {
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
+                },
+              }}
+            >
+              Create New Game
+            </Button>
+          )}
 
-      </div>
+          <CreateGameForm
+            open={isCreateGameOpen}
+            onClose={() => setIsCreateGameOpen(false)}
+            onSubmit={handleCreateGame}
+            currentLocation={currentLocation}
+          />
+
+          <AuthDialog
+            open={isAuthDialogOpen}
+            onClose={() => setIsAuthDialogOpen(false)}
+            onSuccess={handleAuthSuccess}
+          />
+
+          <Snackbar
+            open={!!locationError}
+            message={locationError}
+            autoHideDuration={6000}
+            onClose={() => setLocationError('')}
+          />
+        </div>
+      </Router>
     </ThemeProvider>
   );
 }
