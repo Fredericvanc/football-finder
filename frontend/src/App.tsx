@@ -44,8 +44,11 @@ function CreateGameButton({ isLoggedIn, onClick }: { isLoggedIn: boolean; onClic
         fontSize: '1.1rem',
         fontWeight: 600,
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        backgroundColor: 'transparent',
+        backdropFilter: 'blur(8px)',
         '&:hover': {
           boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
+          backgroundColor: 'rgba(33, 150, 243, 0.1)', // Light blue with transparency
         },
       }}
     >
@@ -417,7 +420,7 @@ function App() {
                     onClick={handleLogout}
                     sx={{ 
                       color: theme.palette.text.primary,
-                      borderColor: theme.palette.text.primary,
+                      borderColor: '#e0e0e0', // Lighter gray for a softer border
                     }}
                   >
                     Logout
@@ -429,7 +432,7 @@ function App() {
                   onClick={handleLogin}
                   sx={{ 
                     color: isLoggedIn ? theme.palette.text.primary : '#fff',
-                    borderColor: isLoggedIn ? theme.palette.text.primary : '#fff',
+                    borderColor: '#e0e0e0', // Lighter gray for a softer border
                   }}
                 >
                   Login
@@ -444,57 +447,90 @@ function App() {
               element={
                 <>
                   <WelcomeBanner isLoggedIn={isLoggedIn} />
-                  <Box sx={{ 
-                    flexGrow: 1, 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 3,
-                    p: 3,
-                    pt: isLoggedIn ? 10 : 0,
-                    mb: 8,
-                  }}>
-                    <Box sx={{ 
-                      display: 'flex',
-                      gap: 3,
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
                       flexDirection: { xs: 'column', md: 'row' },
-                      minHeight: '500px',
-                    }}>
-                      <Box sx={{ 
-                        flex: 1,
-                        minWidth: { xs: '100%', md: '400px' },
-                        maxWidth: { md: '400px' },
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
-                      }}>
-                        <GameList
-                          games={filteredGames}
-                          selectedGame={selectedGame}
-                          onGameSelect={handleGameSelect}
-                          onFilterChange={handleFilterChange}
-                        />
-                      </Box>
+                      height: { 
+                        xs: 'auto',
+                        md: 'calc(100vh - 64px)'
+                      },
+                      mt: '64px',
+                      bgcolor: 'background.default',
+                      gap: { xs: 2, md: 0 }, // Add gap between sections on mobile
+                    }}
+                  >
+                    {/* Left sidebar with filters */}
+                    <Box
+                      sx={{
+                        width: { xs: '100%', md: '400px' },
+                        borderRight: { xs: 0, md: '1px solid #e0e0e0' }, // Subtle border style
+                        bgcolor: 'background.paper',
+                        boxShadow: { 
+                          xs: '0 1px 3px rgba(0,0,0,0.1)',
+                          md: '1px 0 3px rgba(0,0,0,0.1)'
+                        },
+                        overflowY: 'auto',
+                        height: { xs: 'auto', md: '100%' },
+                        p: 2,
+                        zIndex: 1, // Ensure shadow shows over adjacent elements
+                      }}
+                    >
+                      <GameList
+                        games={games}
+                        selectedGame={selectedGame}
+                        onGameSelect={handleGameSelect}
+                        onFilterChange={handleFilterChange}
+                        showOnlyFilters={true}
+                      />
+                    </Box>
 
-                      <Box sx={{ 
-                        flex: 2,
-                        height: { xs: '400px', md: '600px' },
-                        position: 'relative',
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                      }}>
-                        <MapView
-                          games={filteredGames}
-                          currentLocation={currentLocation}
-                          selectedGame={selectedGame}
-                          onGameSelect={handleGameSelect}
-                          centerLocation={centerLocation}
-                        />
-                      </Box>
+                    {/* Center section with game list */}
+                    <Box
+                      sx={{
+                        width: { xs: '100%', md: '400px' },
+                        borderRight: { xs: 0, md: '1px solid #e0e0e0' }, // Subtle border style
+                        bgcolor: 'background.paper',
+                        boxShadow: { 
+                          xs: '0 1px 3px rgba(0,0,0,0.1)',
+                          md: '1px 0 3px rgba(0,0,0,0.1)'
+                        },
+                        overflowY: 'auto',
+                        height: { xs: 'auto', md: '100%' },
+                        zIndex: 1,
+                      }}
+                    >
+                      <GameList
+                        games={filteredGames}
+                        selectedGame={selectedGame}
+                        onGameSelect={handleGameSelect}
+                        onFilterChange={handleFilterChange}
+                        showOnlyList={true}
+                      />
+                    </Box>
+
+                    {/* Right section with map */}
+                    <Box 
+                      sx={{ 
+                        flexGrow: 1,
+                        height: { 
+                          xs: '400px',
+                          md: '100%'
+                        },
+                        bgcolor: 'background.paper',
+                        boxShadow: { 
+                          xs: '0 1px 3px rgba(0,0,0,0.1)',
+                          md: 'none'
+                        },
+                      }}
+                    >
+                      <MapView
+                        games={filteredGames}
+                        currentLocation={currentLocation}
+                        selectedGame={selectedGame}
+                        onGameSelect={handleGameSelect}
+                        centerLocation={centerLocation}
+                      />
                     </Box>
                   </Box>
                 </>

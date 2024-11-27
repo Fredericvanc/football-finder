@@ -1,0 +1,26 @@
+/* Custom styles for Mapbox Geocoder input field */
+.mapboxgl-ctrl-geocoder {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.mapboxgl-ctrl-geocoder--input {
+  border: 1px solid rgba(0, 0, 0, 0.23); /* Mimicking Material-UI default border */
+  border-radius: 4px;
+  padding: 10px 14px; /* Adjusted padding for equal left and right padding */
+  font-size: 1rem;
+  width: 100% !important; /* Ensuring full width minus padding */
+  height: 56px; /* Matching Material-UI input height */
+  box-sizing: border-box;
+  box-shadow: none; /* Ensuring no shadow is applied */
+  transition: border-color 0.3s ease-in-out;
+}
+
+.mapboxgl-ctrl-geocoder--input:focus {
+  border-color: #3f51b5;
+  outline: none;
+}
+
+.fullWidth {
+  width: 100% !important; /* Ensure it takes full width */
+}
