@@ -1,6 +1,5 @@
 import React from 'react';
-import { Box, TextField, InputAdornment } from '@mui/material';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { Box } from '@mui/material';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import './LocationSearch.css';
@@ -9,10 +8,9 @@ import { config } from '../config';
 interface LocationSearchProps {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
   defaultLocation?: { lat: number; lng: number; address: string };
-  className?: string;
 }
 
-export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, defaultLocation, className }) => {
+export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, defaultLocation }) => {
   const geocoderContainerRef = React.useRef<HTMLDivElement>(null);
   const [address, setAddress] = React.useState(defaultLocation?.address || '');
 
@@ -22,8 +20,9 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     const geocoder = new MapboxGeocoder({
       accessToken: config.mapboxToken,
       types: 'address,place,locality',
-      placeholder: 'Enter location...',
+      placeholder: 'Search location...',
       marker: false,
+      language: 'en',
     });
 
     geocoder.addTo(geocoderContainerRef.current);
@@ -80,7 +79,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
 
   return (
     <Box sx={{ width: '100%' }}>
-      <div ref={geocoderContainerRef} className={className} style={{ width: '100%' }} />
+      <div ref={geocoderContainerRef} />
     </Box>
   );
 };

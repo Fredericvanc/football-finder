@@ -155,7 +155,6 @@ export const GameList: React.FC<GameListProps> = ({
             <LocationSearch
               onLocationSelect={(location) => handleFilterChange('location', location)}
               defaultLocation={filters.location.lat !== 0 ? filters.location : undefined}
-              className="fullWidth"  // Use className to apply full width
             />
             
             <TextField

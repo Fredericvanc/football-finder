@@ -2,25 +2,54 @@
 .mapboxgl-ctrl-geocoder {
   width: 100% !important;
   max-width: none !important;
+  box-shadow: none !important;
 }
 
 .mapboxgl-ctrl-geocoder--input {
-  border: 1px solid rgba(0, 0, 0, 0.23); /* Mimicking Material-UI default border */
+  border: 1px solid rgba(0, 0, 0, 0.23);
   border-radius: 4px;
-  padding: 10px 14px; /* Adjusted padding for equal left and right padding */
+  padding: 10px 14px 10px 40px !important;
   font-size: 1rem;
-  width: 100% !important; /* Ensuring full width minus padding */
-  height: 56px; /* Matching Material-UI input height */
+  height: 56px;
   box-sizing: border-box;
-  box-shadow: none; /* Ensuring no shadow is applied */
-  transition: border-color 0.3s ease-in-out;
+  box-shadow: none !important;
+  font-family: inherit;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.mapboxgl-ctrl-geocoder--input::placeholder {
+  color: rgba(0, 0, 0, 0.6);
+  opacity: 1;
+}
+
+.mapboxgl-ctrl-geocoder--input:hover:not(:focus) {
+  border-color: rgba(0, 0, 0, 0.87);
 }
 
 .mapboxgl-ctrl-geocoder--input:focus {
-  border-color: #3f51b5;
   outline: none;
+  border: 2px solid #2196f3 !important;
+  padding: 9px 13px 9px 39px !important;
 }
 
-.fullWidth {
-  width: 100% !important; /* Ensure it takes full width */
+/* Style the search icon */
+.mapboxgl-ctrl-geocoder--icon {
+  top: 50% !important;
+  transform: translateY(-50%);
+  left: 12px !important;
+  opacity: 0.6;
+}
+
+.mapboxgl-ctrl-geocoder--icon-search {
+  top: 50% !important;
+  transform: translateY(-50%);
+  left: 12px !important;
+  opacity: 0.6;
+}
+
+/* Remove shadow from suggestions box */
+.mapboxgl-ctrl-geocoder .suggestions {
+  box-shadow: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.23);
+  border-top: none;
 }
