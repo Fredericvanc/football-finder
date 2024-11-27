@@ -1,8 +1,14 @@
 /* Custom styles for Mapbox Geocoder input field */
+.geocoder-container {
+  position: relative;
+  z-index: 1;
+}
+
 .mapboxgl-ctrl-geocoder {
   width: 100% !important;
   max-width: none !important;
   box-shadow: none !important;
+  margin-top: 0 !important;
 }
 
 .mapboxgl-ctrl-geocoder--input {
@@ -15,6 +21,7 @@
   box-shadow: none !important;
   font-family: inherit;
   color: rgba(0, 0, 0, 0.87);
+  background: transparent !important;
 }
 
 .mapboxgl-ctrl-geocoder--input::placeholder {
@@ -37,14 +44,19 @@
   top: 50% !important;
   transform: translateY(-50%);
   left: 12px !important;
-  opacity: 0.6;
+  opacity: 0.8;
+  width: 24px !important;
+  height: 24px !important;
 }
 
 .mapboxgl-ctrl-geocoder--icon-search {
   top: 50% !important;
   transform: translateY(-50%);
   left: 12px !important;
-  opacity: 0.6;
+  opacity: 0.8;
+  width: 24px !important;
+  height: 24px !important;
+  background-size: 24px !important;
 }
 
 /* Remove shadow from suggestions box */

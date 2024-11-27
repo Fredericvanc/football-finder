@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box } from '@mui/material';
+import { Box, FormControl, InputLabel } from '@mui/material';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import './LocationSearch.css';
@@ -8,11 +8,13 @@ import { config } from '../config';
 interface LocationSearchProps {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
   defaultLocation?: { lat: number; lng: number; address: string };
+  label?: string;
 }
 
-export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, defaultLocation }) => {
+export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, defaultLocation, label }) => {
   const geocoderContainerRef = React.useRef<HTMLDivElement>(null);
   const [address, setAddress] = React.useState(defaultLocation?.address || '');
+  const id = React.useId();
 
   React.useEffect(() => {
     if (!geocoderContainerRef.current || !config.mapboxToken) return;
@@ -78,8 +80,33 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
   }, []);
 
   return (
-    <Box sx={{ width: '100%' }}>
-      <div ref={geocoderContainerRef} />
-    </Box>
+    <FormControl 
+      fullWidth 
+      variant="outlined"
+      sx={{ position: 'relative' }}
+    >
+      {label && (
+        <InputLabel 
+          shrink 
+          htmlFor={id}
+          sx={{
+            background: '#fff',
+            padding: '0 8px',
+            marginLeft: '-4px',
+            zIndex: 1500,
+            position: 'absolute',
+            pointerEvents: 'none',
+            '&.MuiInputLabel-shrink': {
+              transform: 'translate(14px, -9px) scale(0.75)',
+            }
+          }}
+        >
+          {label}
+        </InputLabel>
+      )}
+      <Box sx={{ width: '100%', position: 'relative', zIndex: 1 }}>
+        <div ref={geocoderContainerRef} id={id} className="geocoder-container" />
+      </Box>
+    </FormControl>
   );
 };
