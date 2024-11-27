@@ -34,6 +34,7 @@ export interface CreateGameData {
   title: string;
   description?: string | null;
   location: string;
+  location_name?: string | null;
   latitude: number;
   longitude: number;
   date: string;

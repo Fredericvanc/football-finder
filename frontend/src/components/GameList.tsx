@@ -13,13 +13,15 @@ import {
   Chip,
   IconButton,
   InputAdornment,
+  Tooltip,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupIcon from '@mui/icons-material/Group';
+import RepeatIcon from '@mui/icons-material/Repeat';
 import { Game } from '../types';
-import { format } from 'date-fns';
+import { format, isPast } from 'date-fns';
 
 interface GameListProps {
   games: Game[];
@@ -110,67 +112,70 @@ export const GameList: React.FC<GameListProps> = ({
       {/* Game List */}
       <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
         <Stack spacing={2}>
-          {games.map((game) => (
-            <Card
-              key={game.id}
-              sx={{
-                cursor: 'pointer',
-                transition: 'transform 0.2s ease-in-out',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                },
-                border: selectedGame?.id === game.id ? 2 : 0,
-                borderColor: 'primary.main',
-              }}
-              onClick={() => onGameSelect(game)}
-            >
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {game.title || 'Football Game'}
-                </Typography>
-                
-                <Stack spacing={1}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <LocationOnIcon color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      {game.location_name || 'Location Name'}
+          {games.map((game) => {
+            const isGamePast = isPast(new Date(game.date));
+            
+            return (
+              <Card
+                key={game.id}
+                sx={{
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                  },
+                  border: selectedGame?.id === game.id ? 2 : 0,
+                  borderColor: 'primary.main',
+                }}
+                onClick={() => onGameSelect(game)}
+              >
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Typography variant="h6" component="div">
+                      {game.title || 'Football Game'}
                     </Typography>
-                  </Box>
-                  
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AccessTimeIcon color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      {format(new Date(game.date), 'PPp')}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <GroupIcon color="action" />
-                    <Typography variant="body2" color="text.secondary">
-                      Up to {game.max_players} players
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                    <Chip
-                      label={game.skill_level || 'All Levels'}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
                     {game.is_recurring && (
-                      <Chip
-                        label="Recurring"
-                        size="small"
-                        color="secondary"
-                        variant="outlined"
-                      />
+                      <Tooltip title="Recurring game">
+                        <RepeatIcon color="action" />
+                      </Tooltip>
                     )}
                   </Box>
-                </Stack>
-              </CardContent>
-            </Card>
-          ))}
+
+                  <Stack spacing={1}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <LocationOnIcon color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {game.location_name || 'Location Name'}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <AccessTimeIcon color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {format(new Date(game.date), 'PPp')}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <GroupIcon color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        Up to {game.max_players} players
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Chip
+                        label={game.skill_level || 'All Levels'}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            );
+          })}
         </Stack>
       </Box>
     </Box>
