@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import Map, { Marker, Popup, NavigationControl, MapRef } from 'react-map-gl';
-import { Card, CardContent, Typography, IconButton, Box, Button, useTheme, Stack } from '@mui/material';
+import { Box, Typography, IconButton, Button, useTheme, Stack } from '@mui/material';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import { formatRelative } from 'date-fns';
-import { Game, Location } from '../types';
+import { Game } from '../types';
 import { config } from '../config';
 import 'mapbox-gl/dist/mapbox-gl.css';
 

@@ -15,7 +15,7 @@ import { supabase } from './supabase';
 import { ThemeProvider } from '@mui/material/styles';
 import { createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { config } from './config';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -67,7 +67,6 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [centerLocation, setCenterLocation] = useState<Location | undefined>(undefined);
   const [currentLocation, setCurrentLocation] = useState<Location>({
     latitude: 37.7749,

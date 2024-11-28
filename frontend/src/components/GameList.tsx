@@ -11,7 +11,6 @@ import {
   InputLabel,
   Stack,
   Chip,
-  IconButton,
   InputAdornment,
   Tooltip,
 } from '@mui/material';
@@ -21,10 +20,9 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupIcon from '@mui/icons-material/Group';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import { Game } from '../types';
-import { format, isPast } from 'date-fns';
+import { format } from 'date-fns';
 import { calculateDistance } from '../utils/distance';
 import { LocationSearch } from './LocationSearch';
-import { config } from '../config';
 
 interface GameListProps {
   games: Game[];
@@ -225,7 +223,7 @@ export const GameList: React.FC<GameListProps> = ({
         }}>
           <Stack spacing={2}>
             {filteredGames.map((game) => {
-              const isGamePast = isPast(new Date(game.date));
+              const isGamePast = new Date(game.date) < new Date();
               
               return (
                 <Card
