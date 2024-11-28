@@ -48,6 +48,12 @@ export const GameList: React.FC<GameListProps> = ({
   const filteredGames = React.useMemo(() => {
     // First filter the games
     const filtered = games.filter(game => {
+      // Filter out past games
+      const gameDate = new Date(game.date);
+      if (gameDate < new Date()) {
+        return false;
+      }
+
       // Filter by search text
       if (filters.search && !game.title.toLowerCase().includes(filters.search.toLowerCase())) {
         return false;
@@ -160,7 +166,7 @@ export const GameList: React.FC<GameListProps> = ({
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                       <Typography variant="h6" component="div">
-                        {game.title || 'Football Game'}
+                        {format(new Date(game.date), 'EEE d | HH:mm')}
                       </Typography>
                       {game.is_recurring && (
                         <Tooltip title="Recurring game">
@@ -168,6 +174,10 @@ export const GameList: React.FC<GameListProps> = ({
                         </Tooltip>
                       )}
                     </Box>
+
+                    <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
+                      {game.title || 'Football Game'}
+                    </Typography>
 
                     <Stack spacing={1}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

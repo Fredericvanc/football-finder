@@ -45,11 +45,9 @@ function CreateGameButton({ isLoggedIn, onClick }: { isLoggedIn: boolean; onClic
         fontSize: '1.1rem',
         fontWeight: 600,
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        backgroundColor: 'transparent',
-        backdropFilter: 'blur(8px)',
+        zIndex: 1300, // Material-UI's modal z-index is 1300, setting this to match
         '&:hover': {
           boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
-          backgroundColor: 'rgba(33, 150, 243, 0.1)', // Light blue with transparency
         },
       }}
     >
