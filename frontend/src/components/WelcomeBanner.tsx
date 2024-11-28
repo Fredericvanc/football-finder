@@ -23,8 +23,8 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ isLoggedIn }) => {
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
-        mt: '-64px', // Offset for AppBar height
-        pt: '64px',  // Add padding to account for the offset
+        mt: { xs: 0, md: '-64px' }, // Remove negative margin on mobile
+        pt: { xs: 0, md: '64px' },  // Adjust padding on mobile
         mb: 0, // Remove bottom margin
       }}
     >
