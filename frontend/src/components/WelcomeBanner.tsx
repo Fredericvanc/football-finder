@@ -25,6 +25,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ isLoggedIn }) => {
         color: 'white',
         mt: '-64px', // Offset for AppBar height
         pt: '64px',  // Add padding to account for the offset
+        mb: 0, // Remove bottom margin
       }}
     >
       {/* Video Background */}
@@ -52,7 +53,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ isLoggedIn }) => {
           position: 'relative',
           zIndex: 1,
           textAlign: 'center',
-          py: 4,
+          py: 2,
         }}
       >
         <Typography

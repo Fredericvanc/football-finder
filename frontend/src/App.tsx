@@ -551,7 +551,7 @@ function App() {
                       },
                       mt: isLoggedIn ? '64px' : 0,
                       bgcolor: 'background.default',
-                      gap: { xs: 2, md: 0 }, // Add gap between sections on mobile
+                      gap: { xs: 0, md: 0 }, // Remove gap between sections
                     }}
                   >
                     {/* Mobile View */}
@@ -560,7 +560,7 @@ function App() {
                         display: { xs: 'flex', md: 'none' },
                         flexDirection: 'column',
                         gap: 2,
-                        p: 2,
+                        p: 0, // Remove padding
                         width: '100%',
                       }}
                     >
@@ -599,90 +599,77 @@ function App() {
                     <Box
                       sx={{
                         display: { xs: 'none', md: 'flex' },
-                        flex: 1,
-                        gap: 2,
-                        p: 2,
-                        height: 'calc(100vh - 64px)',
+                        flexDirection: 'column',
+                        width: '400px',
+                        p: 0, // Remove padding
+                        borderRight: 1,
+                        borderColor: 'divider',
+                        height: '100%',
+                        overflow: 'auto',
                       }}
                     >
                       {/* Left sidebar with filters */}
-                      <Box
-                        sx={{
-                          width: { xs: '100%', md: '400px' },
-                          borderRight: { xs: 0, md: '1px solid #e0e0e0' }, // Subtle border style
-                          bgcolor: 'background.paper',
-                          boxShadow: { 
-                            xs: '0 1px 3px rgba(0,0,0,0.1)',
-                            md: '1px 0 3px rgba(0,0,0,0.1)'
-                          },
-                          overflowY: 'auto',
-                          height: { xs: 'auto', md: '100%' },
-                          p: 2,
-                          zIndex: 1, // Ensure shadow shows over adjacent elements
-                        }}
-                      >
-                        <GameList
-                          games={games}
-                          onGameSelect={handleGameSelect}
-                          onLocationSelect={handleLocationSelect}
-                          onFilterChange={handleFilterChange}
-                          currentLocation={currentLocation}
-                          selectedGame={selectedGame}
-                          showOnlyFilters={true}
-                          filters={filters}
-                        />
-                      </Box>
+                      <GameList
+                        games={games}
+                        onGameSelect={handleGameSelect}
+                        onLocationSelect={handleLocationSelect}
+                        onFilterChange={handleFilterChange}
+                        currentLocation={currentLocation}
+                        selectedGame={selectedGame}
+                        showOnlyFilters={true}
+                        filters={filters}
+                      />
+                    </Box>
 
-                      {/* Center section with game list */}
-                      <Box
-                        sx={{
-                          width: { xs: '100%', md: '400px' },
-                          borderRight: { xs: 0, md: '1px solid #e0e0e0' }, // Subtle border style
-                          bgcolor: 'background.paper',
-                          boxShadow: { 
-                            xs: '0 1px 3px rgba(0,0,0,0.1)',
-                            md: '1px 0 3px rgba(0,0,0,0.1)'
-                          },
-                          overflowY: 'auto',
-                          height: { xs: 'auto', md: '100%' },
-                          zIndex: 1,
-                        }}
-                      >
-                        <GameList
-                          games={filteredGames}
-                          onGameSelect={handleGameSelect}
-                          onLocationSelect={handleLocationSelect}
-                          onFilterChange={handleFilterChange}
-                          currentLocation={currentLocation}
-                          selectedGame={selectedGame}
-                          showOnlyList={true}
-                          filters={filters}
-                        />
-                      </Box>
+                    {/* Center section with game list */}
+                    <Box
+                      sx={{
+                        width: { xs: '100%', md: '400px' },
+                        borderRight: { xs: 0, md: '1px solid #e0e0e0' }, // Subtle border style
+                        bgcolor: 'background.paper',
+                        boxShadow: { 
+                          xs: '0 1px 3px rgba(0,0,0,0.1)',
+                          md: '1px 0 3px rgba(0,0,0,0.1)'
+                        },
+                        overflowY: 'auto',
+                        height: { xs: 'auto', md: '100%' },
+                        zIndex: 1,
+                      }}
+                    >
+                      <GameList
+                        games={filteredGames}
+                        onGameSelect={handleGameSelect}
+                        onLocationSelect={handleLocationSelect}
+                        onFilterChange={handleFilterChange}
+                        currentLocation={currentLocation}
+                        selectedGame={selectedGame}
+                        showOnlyList={true}
+                        filters={filters}
+                      />
+                    </Box>
 
-                      {/* Right section with map */}
-                      <Box 
-                        sx={{ 
-                          flexGrow: 1,
-                          height: { 
-                            xs: '400px',
-                            md: '100%'
-                          },
-                          bgcolor: 'background.paper',
-                          boxShadow: { 
-                            xs: '0 1px 3px rgba(0,0,0,0.1)',
-                            md: 'none'
-                          },
-                        }}
-                      >
-                        <MapView
-                          games={filteredGames}
-                          currentLocation={currentLocation}
-                          selectedGame={selectedGame}
-                          onGameSelect={handleGameSelect}
-                          centerLocation={centerLocation}
-                        />
-                      </Box>
+                    {/* Right section with map */}
+                    <Box 
+                      sx={{ 
+                        flexGrow: 1,
+                        height: { 
+                          xs: '400px',
+                          md: '100%'
+                        },
+                        bgcolor: 'background.paper',
+                        boxShadow: { 
+                          xs: '0 1px 3px rgba(0,0,0,0.1)',
+                          md: 'none'
+                        },
+                      }}
+                    >
+                      <MapView
+                        games={filteredGames}
+                        currentLocation={currentLocation}
+                        selectedGame={selectedGame}
+                        onGameSelect={handleGameSelect}
+                        centerLocation={centerLocation}
+                      />
                     </Box>
                   </Box>
                 </>
