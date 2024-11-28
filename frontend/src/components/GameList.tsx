@@ -89,7 +89,7 @@ export const GameList: React.FC<GameListProps> = ({
 
   return (
     <Box sx={{ 
-      height: '100%', 
+      height: { xs: 'auto', md: '100%' }, 
       display: 'flex',
       flexDirection: 'column',
       bgcolor: 'background.paper',
@@ -97,9 +97,9 @@ export const GameList: React.FC<GameListProps> = ({
       zIndex: 1,
       border: '1px solid #e0e0e0',
       borderRadius: '8px',
-      overflow: 'hidden',
+      overflow: { xs: 'visible', md: 'hidden' }, 
       ...(showOnlyList && {
-        maxHeight: { xs: '500px', md: '100%' },
+        maxHeight: { md: '100%' }, 
       })
     }}>
       {/* Filters */}
@@ -115,7 +115,7 @@ export const GameList: React.FC<GameListProps> = ({
       {!showOnlyFilters && (
         <Box sx={{ 
           flexGrow: 1,
-          overflow: 'auto',
+          overflow: { xs: 'visible', md: 'auto' }, 
           px: 2,
           py: 1,
           '&::-webkit-scrollbar': {
