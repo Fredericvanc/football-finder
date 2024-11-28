@@ -81,7 +81,7 @@ function App() {
     skillLevel: 'all',
     minPlayers: 0,
     maxPlayers: 100,
-    distance: 10, // Default 10km radius
+    distance: 5, // Default 5km radius
     location: {
       lat: currentLocation.latitude,
       lng: currentLocation.longitude,
