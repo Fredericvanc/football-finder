@@ -155,6 +155,7 @@ export const GameList: React.FC<GameListProps> = ({
             <LocationSearch
               onLocationSelect={(location) => handleFilterChange('location', location)}
               defaultLocation={filters.location.lat !== 0 ? filters.location : undefined}
+              label="Location"
             />
             
             <TextField
