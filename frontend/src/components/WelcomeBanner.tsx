@@ -24,8 +24,6 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ isLoggedIn }) => {
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
-        mt: '-64px', // Offset for AppBar height
-        pt: '64px',  // Add padding to account for the offset
         mb: 0, // Remove bottom margin
       }}
     >
