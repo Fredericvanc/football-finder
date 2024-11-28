@@ -24,6 +24,7 @@ import { Game } from '../types';
 import { format, isPast } from 'date-fns';
 import { calculateDistance } from '../utils/distance';
 import { LocationSearch } from './LocationSearch';
+import { config } from '../config';
 
 interface GameListProps {
   games: Game[];
@@ -107,12 +108,12 @@ export const GameList: React.FC<GameListProps> = ({
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const newLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            address: 'Current Location'
-          };
-          handleFilterChange('location', newLocation);
+          const { latitude, longitude } = position.coords;
+          handleFilterChange('location', {
+            lat: latitude,
+            lng: longitude,
+            address: ''  // LocationSearch will handle displaying the address
+          });
         },
         (error) => {
           console.error('Error getting location:', error);

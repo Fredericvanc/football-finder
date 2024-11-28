@@ -13,6 +13,7 @@ interface LocationSearchProps {
 
 export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, defaultLocation, label }) => {
   const geocoderContainerRef = React.useRef<HTMLDivElement>(null);
+  const geocoderRef = React.useRef<MapboxGeocoder | null>(null);
   const [address, setAddress] = React.useState(defaultLocation?.address || '');
   const [isFocused, setIsFocused] = React.useState(false);
   const theme = useTheme();
@@ -33,7 +34,16 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
       language: 'en',
     });
 
+    geocoderRef.current = geocoder;
     geocoder.addTo(container);
+
+    // Set initial value if defaultLocation exists
+    const input = container.querySelector('input') as HTMLInputElement;
+    if (input && defaultLocation?.address) {
+      input.value = defaultLocation.address;
+      // Also set the geocoder's internal state
+      geocoder.setInput(defaultLocation.address);
+    }
 
     // Handle location selection
     geocoder.on('result', (e) => {
@@ -44,21 +54,29 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     });
 
     // Handle focus and blur events
-    const input = container.querySelector('input');
     if (input) {
       input.addEventListener('focus', () => setIsFocused(true));
       input.addEventListener('blur', () => setIsFocused(false));
     }
 
-    // Set default location if provided
-    if (defaultLocation) {
-      setAddress(defaultLocation.address);
-    }
-
     return () => {
       geocoder.onRemove();
+      geocoderRef.current = null;
     };
   }, [onLocationSelect, defaultLocation, theme.palette.mode]);
+
+  // Update input value when defaultLocation changes
+  React.useEffect(() => {
+    const container = geocoderContainerRef.current;
+    const geocoder = geocoderRef.current;
+    if (!container || !geocoder) return;
+
+    const input = container.querySelector('input') as HTMLInputElement;
+    if (input && defaultLocation?.address) {
+      input.value = defaultLocation.address;
+      geocoder.setInput(defaultLocation.address);
+    }
+  }, [defaultLocation]);
 
   // Get current location
   const getCurrentLocation = () => {
