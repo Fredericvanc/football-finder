@@ -221,7 +221,14 @@ export const GameList: React.FC<GameListProps> = ({
                             startIcon={<DirectionsIcon />}
                             onClick={(e) => {
                               e.stopPropagation();
-                              window.open(getDirectionsUrl(game.latitude, game.longitude, game.location), '_blank');
+                              const url = getDirectionsUrl(game.latitude, game.longitude, game.location);
+                              if (/Mobi|Android/i.test(navigator.userAgent)) {
+                                // On mobile, use location.href to avoid opening a new tab
+                                window.location.href = url;
+                              } else {
+                                // On desktop, open in a new tab
+                                window.open(url, '_blank');
+                              }
                             }}
                           >
                             Directions
