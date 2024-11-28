@@ -1,34 +1,23 @@
 import React from 'react';
 import {
   Box,
+  Typography,
+  Stack,
   Card,
   CardContent,
-  Typography,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Stack,
   Chip,
-  InputAdornment,
   Tooltip,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
-  Divider,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupIcon from '@mui/icons-material/Group';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import { Game } from '../types';
+import { GameFiltersComponent } from './GameFilters';
 import { format } from 'date-fns';
 import { calculateDistance } from '../utils/distance';
-import { LocationSearch } from './LocationSearch';
-import { GameFiltersComponent } from './GameFilters';
+
+import { GameFilters } from '../types';
 
 interface GameListProps {
   games: Game[];
@@ -42,18 +31,8 @@ interface GameListProps {
   filters: GameFilters;
 }
 
-export interface GameFilters {
-  search: string;
-  skillLevel: string;
-  minPlayers: number;
-  maxPlayers: number;
-  distance: number;
-  location: {
-    lat: number;
-    lng: number;
-    address: string;
-  };
-}
+// Re-export GameFilters type
+export type { GameFilters };
 
 export const GameList: React.FC<GameListProps> = ({
   games,

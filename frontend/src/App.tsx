@@ -278,7 +278,7 @@ function App() {
               const address = data.features[0]?.place_name;
 
               if (address) {
-                setFilters(prev => ({
+                setFilters((prev: GameFilters) => ({
                   ...prev,
                   location: {
                     lat: latitude,
@@ -406,14 +406,16 @@ function App() {
     }
   };
 
-  const handleFilterChange = (newFilters: GameFilters) => {
-    setFilters(newFilters);
+  const handleFilterChange = (key: keyof GameFilters, value: string | number | { lat: number; lng: number; address: string }) => {
+    setFilters((prevFilters: GameFilters) => ({
+      ...prevFilters,
+      [key]: value
+    }));
     // Update map center when location changes
-    if (newFilters.location.lat !== filters.location.lat || 
-        newFilters.location.lng !== filters.location.lng) {
+    if (key === 'location') {
       setCenterLocation({
-        latitude: newFilters.location.lat,
-        longitude: newFilters.location.lng
+        latitude: (value as { lat: number; lng: number; address: string }).lat,
+        longitude: (value as { lat: number; lng: number; address: string }).lng
       });
     }
   };
@@ -430,14 +432,7 @@ function App() {
 
   const handleLocationSelect = (location: { lat: number; lng: number; address: string }) => {
     // Update filters with new location
-    setFilters(prev => ({
-      ...prev,
-      location: {
-        lat: location.lat,
-        lng: location.lng,
-        address: location.address
-      }
-    }));
+    handleFilterChange('location', location);
 
     // Update map center
     setCenterLocation({
