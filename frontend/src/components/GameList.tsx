@@ -13,6 +13,11 @@ import {
   Chip,
   InputAdornment,
   Tooltip,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Divider,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -23,12 +28,13 @@ import { Game } from '../types';
 import { format } from 'date-fns';
 import { calculateDistance } from '../utils/distance';
 import { LocationSearch } from './LocationSearch';
+import { GameFiltersComponent } from './GameFilters';
 
 interface GameListProps {
   games: Game[];
   onGameSelect: (game: Game | null) => void;
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
-  onFilterChange: (filters: GameFilters) => void;
+  onFilterChange: (key: keyof GameFilters, value: string | number | { lat: number; lng: number; address: string }) => void;
   currentLocation: { latitude: number; longitude: number };
   selectedGame: Game | null;
   showOnlyFilters?: boolean;
@@ -102,16 +108,15 @@ export const GameList: React.FC<GameListProps> = ({
     });
   }, [games, filters]);
 
-  const handleFilterChange = (key: keyof GameFilters, value: string | number | { lat: number; lng: number; address: string }) => {
-    onFilterChange({ ...filters, [key]: value });
-  };
-
   return (
     <Box sx={{ 
       height: '100%', 
-      display: 'flex', 
+      display: 'flex',
       flexDirection: 'column',
-      border: '1px solid #e0e0e0', 
+      bgcolor: 'background.paper',
+      position: 'relative',
+      zIndex: 1,
+      border: '1px solid #e0e0e0',
       borderRadius: '8px',
       overflow: 'hidden',
       ...(showOnlyList && {
@@ -120,110 +125,11 @@ export const GameList: React.FC<GameListProps> = ({
     }}>
       {/* Filters */}
       {!showOnlyList && (
-        <Box sx={{ 
-          borderBottom: showOnlyFilters ? 0 : 1, 
-          borderColor: 'divider',
-          pt: 2, // Add padding at the top
-          pb: 2,
-          px: 2,
-        }}>
-          <Typography variant="h6" gutterBottom>
-            Filters
-          </Typography>
-          <Stack spacing={2}>
-            <LocationSearch
-              onLocationSelect={(loc) => {
-                handleFilterChange('location', loc);
-                onLocationSelect(loc);
-              }}
-              defaultLocation={filters.location}
-              label="Location"
-            />
-            
-            <TextField
-              fullWidth
-              type="number"
-              label="Distance (km)"
-              value={filters.distance}
-              onChange={(e) => handleFilterChange('distance', Math.max(0, parseInt(e.target.value) || 0))}
-              InputProps={{
-                inputProps: { min: 0 },
-                endAdornment: <InputAdornment position="end">km</InputAdornment>,
-              }}
-              sx={{
-                '& .MuiInputLabel-root': {
-                  zIndex: 0, 
-                  background: 'transparent'
-                }
-              }}
-            />
-
-            <TextField
-              fullWidth
-              placeholder="Search games..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiInputLabel-root': {
-                  zIndex: 0, 
-                  background: 'transparent'
-                }
-              }}
-            />
-
-            <FormControl fullWidth>
-              <InputLabel sx={{ zIndex: 0, background: 'transparent' }}>Skill Level</InputLabel>
-              <Select
-                value={filters.skillLevel}
-                onChange={(e) => handleFilterChange('skillLevel', e.target.value)}
-                label="Skill Level"
-              >
-                <MenuItem value="all">All Levels</MenuItem>
-                <MenuItem value="beginner">Beginner</MenuItem>
-                <MenuItem value="intermediate">Intermediate</MenuItem>
-                <MenuItem value="advanced">Advanced</MenuItem>
-              </Select>
-            </FormControl>
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                type="number"
-                label="Min Players"
-                fullWidth
-                value={filters.minPlayers}
-                onChange={(e) => handleFilterChange('minPlayers', parseInt(e.target.value) || 0)}
-                InputProps={{ inputProps: { min: 0 } }}
-                sx={{
-                  '& .MuiInputLabel-root': {
-                    zIndex: 0, 
-                    background: 'transparent'
-                  }
-                }}
-              />
-              <TextField
-                type="number"
-                label="Max Players"
-                fullWidth
-                value={filters.maxPlayers}
-                onChange={(e) => handleFilterChange('maxPlayers', parseInt(e.target.value) || 0)}
-                InputProps={{ inputProps: { min: 0 } }}
-                sx={{
-                  '& .MuiInputLabel-root': {
-                    zIndex: 0, 
-                    background: 'transparent'
-                  }
-                }}
-              />
-            </Box>
-          </Stack>
-        </Box>
+        <GameFiltersComponent
+          filters={filters}
+          onFilterChange={onFilterChange}
+          onLocationSelect={onLocationSelect}
+        />
       )}
 
       {/* Game List */}
@@ -248,8 +154,17 @@ export const GameList: React.FC<GameListProps> = ({
           },
         }}>
           <Stack spacing={2}>
-            {filteredGames.map((game) => {
-              return (
+            {filteredGames.length === 0 ? (
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary">
+                  No games found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Try adjusting your filters or increasing the search radius
+                </Typography>
+              </Box>
+            ) : (
+              filteredGames.map((game) => (
                 <Card
                   key={game.id}
                   sx={{
@@ -279,7 +194,12 @@ export const GameList: React.FC<GameListProps> = ({
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <LocationOnIcon color="action" />
                         <Typography variant="body2" color="text.secondary">
-                          {game.location_name || 'Location Name'}
+                          {game.location_name || 'Location Name'} ({calculateDistance(
+                            currentLocation.latitude,
+                            currentLocation.longitude,
+                            game.latitude,
+                            game.longitude
+                          ).toFixed(1)} km)
                         </Typography>
                       </Box>
                       
@@ -293,7 +213,7 @@ export const GameList: React.FC<GameListProps> = ({
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <GroupIcon color="action" />
                         <Typography variant="body2" color="text.secondary">
-                          Up to {game.max_players} players
+                          {game.min_players} - {game.max_players} players
                         </Typography>
                       </Box>
 
@@ -308,8 +228,8 @@ export const GameList: React.FC<GameListProps> = ({
                     </Stack>
                   </CardContent>
                 </Card>
-              );
-            })}
+              ))
+            )}
           </Stack>
         </Box>
       )}
