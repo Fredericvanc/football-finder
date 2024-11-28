@@ -14,6 +14,7 @@ interface LocationSearchProps {
 export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, defaultLocation, label }) => {
   const geocoderContainerRef = React.useRef<HTMLDivElement>(null);
   const [address, setAddress] = React.useState(defaultLocation?.address || '');
+  const [isFocused, setIsFocused] = React.useState(false);
   const id = React.useId();
 
   React.useEffect(() => {
@@ -40,6 +41,13 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     // Set default location if provided
     if (defaultLocation) {
       setAddress(defaultLocation.address);
+    }
+
+    // Handle focus and blur events
+    const input = geocoderContainerRef.current.querySelector('input');
+    if (input) {
+      input.addEventListener('focus', () => setIsFocused(true));
+      input.addEventListener('blur', () => setIsFocused(false));
     }
 
     return () => {
@@ -96,6 +104,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
             zIndex: 1500,
             position: 'absolute',
             pointerEvents: 'none',
+            color: isFocused ? '#2196f3' : 'rgba(0, 0, 0, 0.6)',
             '&.MuiInputLabel-shrink': {
               transform: 'translate(14px, -9px) scale(0.75)',
             }

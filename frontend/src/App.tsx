@@ -455,7 +455,7 @@ function App() {
                         xs: 'auto',
                         md: 'calc(100vh - 64px)'
                       },
-                      mt: '64px',
+                      mt: isLoggedIn ? '64px' : 0,
                       bgcolor: 'background.default',
                       gap: { xs: 2, md: 0 }, // Add gap between sections on mobile
                     }}

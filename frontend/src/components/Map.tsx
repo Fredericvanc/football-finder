@@ -101,10 +101,15 @@ export const MapView: React.FC<MapViewProps> = ({
   // Handle theme changes
   useEffect(() => {
     if (mapRef.current && isMapLoaded) {
+      // Remove the old map instance
+      handleMapRemove();
+      // Force a re-render of the map with the new style
       const map = mapRef.current.getMap();
       map.setStyle(mapStyle);
+      // Re-initialize the map
+      handleMapLoad();
     }
-  }, [mapStyle, isMapLoaded]);
+  }, [theme.palette.mode, mapStyle, handleMapLoad, handleMapRemove, isMapLoaded]);
 
   const handleGPSClick = () => {
     setViewState(prev => ({
@@ -118,6 +123,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const renderMap = () => (
     <Map
       ref={mapRef}
+      reuseMaps
       mapboxAccessToken={config.mapboxToken}
       mapStyle={mapStyle}
       {...viewState}
@@ -241,7 +247,7 @@ export const MapView: React.FC<MapViewProps> = ({
   );
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
       <style>
         {`
           .mapboxgl-popup-content {
@@ -270,6 +276,6 @@ export const MapView: React.FC<MapViewProps> = ({
       >
         <MyLocationIcon />
       </IconButton>
-    </div>
+    </Box>
   );
 };
