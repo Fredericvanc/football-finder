@@ -18,6 +18,7 @@ import Map, { Marker } from 'react-map-gl';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import { Game, Location, CreateGameData } from '../types';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { LocationSearch } from './LocationSearch';
 
 interface CreateGameFormProps {
   open: boolean;
@@ -66,13 +67,43 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
     }));
   }, [currentLocation]);
 
-  const handleMapClick = (event: any) => {
-    const { lat, lng } = event.lngLat;
-    setFormData({
-      ...formData,
-      latitude: lat,
-      longitude: lng,
-    });
+  const handleMapClick = async (event: mapboxgl.MapLayerMouseEvent) => {
+    const { lng, lat } = event.lngLat;
+    
+    try {
+      // Reverse geocode the clicked coordinates
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${process.env.REACT_APP_MAPBOX_TOKEN}`
+      );
+      const data = await response.json();
+      
+      if (data.features && data.features.length > 0) {
+        const address = data.features[0].place_name;
+        
+        // Update form data with new location
+        setFormData({
+          ...formData,
+          location: address,
+          latitude: lat,
+          longitude: lng,
+        });
+
+        // Update map view while keeping the current zoom level
+        setViewState({
+          ...viewState,
+          latitude: lat,
+          longitude: lng,
+        });
+
+        // Update the LocationSearch component's input
+        const geocoder = document.querySelector('.mapboxgl-ctrl-geocoder--input') as HTMLInputElement;
+        if (geocoder) {
+          geocoder.value = address;
+        }
+      }
+    } catch (error) {
+      console.error('Error reverse geocoding:', error);
+    }
   };
 
   const handleResetLocation = () => {
@@ -116,17 +147,49 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
     }
   };
 
+  const handleUseCurrentLocation = () => {
+    setFormData(prev => ({
+      ...prev,
+      latitude: currentLocation.latitude,
+      longitude: currentLocation.longitude,
+    }));
+    setViewState(prev => ({
+      ...prev,
+      latitude: currentLocation.latitude,
+      longitude: currentLocation.longitude,
+      zoom: 14
+    }));
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <form onSubmit={handleSubmit}>
         <DialogTitle>Create New Game</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-            <TextField
+            <LocationSearch
               label="Location"
-              value={formData.location}
-              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              placeholder="e.g., Central Park Football Field"
+              onLocationSelect={(location) => {
+                setFormData({
+                  ...formData,
+                  location: location.address,
+                  latitude: location.lat,
+                  longitude: location.lng,
+                });
+                setViewState({
+                  ...viewState,
+                  latitude: location.lat,
+                  longitude: location.lng,
+                  zoom: 14
+                });
+              }}
+              defaultLocation={
+                formData.location ? {
+                  lat: formData.latitude,
+                  lng: formData.longitude,
+                  address: formData.location
+                } : undefined
+              }
             />
 
             <Box sx={{ height: 300 }}>
@@ -161,22 +224,15 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
                     }}
                   />
                 </Marker>
-                <IconButton
-                  onClick={handleResetLocation}
-                  sx={{
-                    position: 'absolute',
-                    right: 10,
-                    top: 40,
-                    zIndex: 1,
-                    backgroundColor: 'white',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                    },
-                  }}
+                <Button
+                  variant="contained"
                   size="small"
+                  startIcon={<MyLocationIcon />}
+                  onClick={handleUseCurrentLocation}
+                  sx={{ position: 'absolute', top: 10, right: 10 }}
                 >
-                  <MyLocationIcon />
-                </IconButton>
+                  Use My Location
+                </Button>
               </Map>
             </Box>
 
