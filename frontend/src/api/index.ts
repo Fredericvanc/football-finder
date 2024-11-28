@@ -16,7 +16,6 @@ interface DatabaseGame {
   skill_level: string | null;
   whatsapp_link: string | null;
   is_recurring: boolean;
-  recurrence_frequency: string | null;
   creator_id: string;
   created_at: string;
   profiles?: Array<{
@@ -43,7 +42,6 @@ const transformGame = (dbGame: DatabaseGame): Game => {
     skill_level: dbGame.skill_level,
     whatsapp_link: dbGame.whatsapp_link,
     is_recurring: dbGame.is_recurring,
-    recurrence_frequency: dbGame.recurrence_frequency,
     creator: creator ? {
       id: creator.id,
       name: creator.name || 'Anonymous',
@@ -110,7 +108,6 @@ export async function createGame(gameData: CreateGameData): Promise<Game> {
       location_name: gameData.location_name ?? null,
       whatsapp_link: gameData.whatsapp_link ?? null,
       is_recurring: gameData.is_recurring ?? false,
-      recurrence_frequency: gameData.recurrence_frequency ?? null
     };
 
     const { data, error } = await supabase

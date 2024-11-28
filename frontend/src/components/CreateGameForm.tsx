@@ -33,7 +33,8 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
   currentLocation,
 }) => {
   const [formData, setFormData] = useState({
-    title: '',
+    title: 'Football Game',
+    organization: '',
     description: '',
     location: '',
     date: new Date(),
@@ -43,7 +44,6 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
     latitude: currentLocation.latitude,
     longitude: currentLocation.longitude,
     is_recurring: false,
-    recurrence_frequency: 'weekly' as const,
   });
 
   const [viewState, setViewState] = useState({
@@ -91,12 +91,12 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Create the game data with required fields
+
     const gameData: CreateGameData = {
       title: formData.title,
       description: formData.description || null,
       location: formData.location,
+      location_name: formData.organization || null,
       latitude: formData.latitude,
       longitude: formData.longitude,
       date: formData.date.toISOString(),
@@ -104,7 +104,6 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
       skill_level: formData.skill_level || null,
       whatsapp_link: formData.whatsapp_link || null,
       is_recurring: formData.is_recurring,
-      recurrence_frequency: formData.is_recurring ? formData.recurrence_frequency : null,
     };
 
     console.log('Submitting game data:', gameData);
@@ -124,92 +123,69 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <TextField
-              label="Title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g., Friendly Football Match"
-            />
-            <TextField
-              label="Description (optional)"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              multiline
-              rows={3}
-              placeholder="Add any additional details about the game..."
-            />
-            <TextField
               label="Location"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               placeholder="e.g., Central Park Football Field"
             />
-            
-            <Box sx={{ position: 'relative' }}>
-              <Typography variant="subtitle1" color="textSecondary">
-                Click on the map to select game location
-              </Typography>
-              <IconButton
-                onClick={handleResetLocation}
-                sx={{
-                  position: 'absolute',
-                  right: 10,
-                  top: 40,
-                  zIndex: 1,
-                  backgroundColor: 'white',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  },
-                }}
-                size="small"
-              >
-                <MyLocationIcon />
-              </IconButton>
-              <Box sx={{ height: 300, width: '100%', mb: 2 }}>
-                <Map
-                  {...viewState}
-                  onMove={evt => setViewState(evt.viewState)}
-                  style={{ width: '100%', height: '100%' }}
-                  mapStyle="mapbox://styles/mapbox/streets-v11"
-                  mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
-                  onClick={handleMapClick}
-                >
-                  <Marker
-                    latitude={formData.latitude}
-                    longitude={formData.longitude}
-                    draggable
-                    onDragEnd={(event) => {
-                      const { lat, lng } = event.lngLat;
-                      setFormData({
-                        ...formData,
-                        latitude: lat,
-                        longitude: lng,
-                      });
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: '50%',
-                        backgroundColor: '#1976d2',
-                        border: '2px solid white',
-                        cursor: 'grab',
-                      }}
-                    />
-                  </Marker>
-                </Map>
-              </Box>
-            </Box>
-            
-            <Typography variant="caption" color="textSecondary">
-              Location: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
-            </Typography>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ height: 300 }}>
+              <Map
+                {...viewState}
+                onMove={evt => setViewState(evt.viewState)}
+                mapStyle="mapbox://styles/mapbox/streets-v9"
+                mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN}
+                onClick={handleMapClick}
+              >
+                <Marker
+                  longitude={formData.longitude}
+                  latitude={formData.latitude}
+                  draggable
+                  onDragEnd={(event) => {
+                    const { lat, lng } = event.lngLat;
+                    setFormData({
+                      ...formData,
+                      latitude: lat,
+                      longitude: lng,
+                    });
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      backgroundColor: '#1976d2',
+                      border: '2px solid white',
+                      cursor: 'grab',
+                    }}
+                  />
+                </Marker>
+                <IconButton
+                  onClick={handleResetLocation}
+                  sx={{
+                    position: 'absolute',
+                    right: 10,
+                    top: 40,
+                    zIndex: 1,
+                    backgroundColor: 'white',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    },
+                  }}
+                  size="small"
+                >
+                  <MyLocationIcon />
+                </IconButton>
+              </Map>
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
               <DateTimePicker
-                label="Date and Time"
+                label="Date & Time"
                 value={formData.date}
                 onChange={(newValue) => setFormData({ ...formData, date: newValue || new Date() })}
+                sx={{ flex: 1 }}
               />
               <FormControlLabel
                 control={
@@ -218,9 +194,36 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
                     onChange={(e) => setFormData({ ...formData, is_recurring: e.target.checked })}
                   />
                 }
-                label="Repeat Weekly"
+                label="Recurring Weekly"
               />
             </Box>
+
+            <TextField
+              label="Maximum Players"
+              type="number"
+              value={formData.max_players}
+              onChange={(e) => setFormData({ ...formData, max_players: e.target.value })}
+              inputProps={{ min: 2, max: 100 }}
+            />
+
+            <TextField
+              select
+              label="Skill Level"
+              value={formData.skill_level}
+              onChange={(e) => setFormData({ ...formData, skill_level: e.target.value })}
+            >
+              <MenuItem value="beginner">Beginner</MenuItem>
+              <MenuItem value="intermediate">Intermediate</MenuItem>
+              <MenuItem value="advanced">Advanced</MenuItem>
+              <MenuItem value="all">All Levels</MenuItem>
+            </TextField>
+
+            <TextField
+              label="Organization Name (optional)"
+              value={formData.organization}
+              onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+              placeholder="e.g., Sports Club, School, Company"
+            />
 
             <TextField
               label="WhatsApp Group Link (optional)"
@@ -228,24 +231,15 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
               onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })}
               placeholder="https://chat.whatsapp.com/..."
             />
+
             <TextField
-              label="Max Players"
-              type="number"
-              value={formData.max_players}
-              onChange={(e) => setFormData({ ...formData, max_players: e.target.value })}
-              placeholder="e.g., 10"
+              label="Description (optional)"
+              multiline
+              rows={4}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Add any additional information about the game..."
             />
-            <TextField
-              select
-              label="Skill Level (optional)"
-              value={formData.skill_level}
-              onChange={(e) => setFormData({ ...formData, skill_level: e.target.value })}
-            >
-              <MenuItem value="">Any Skill Level</MenuItem>
-              <MenuItem value="beginner">Beginner</MenuItem>
-              <MenuItem value="intermediate">Intermediate</MenuItem>
-              <MenuItem value="advanced">Advanced</MenuItem>
-            </TextField>
           </Box>
         </DialogContent>
         <DialogActions>

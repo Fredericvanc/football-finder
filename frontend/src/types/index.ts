@@ -9,6 +9,8 @@ export interface Creator {
   email: string;
 }
 
+export type RecurrenceFrequency = 'weekly' | 'monthly';
+
 export interface Game {
   id: number;
   title: string;
@@ -24,7 +26,6 @@ export interface Game {
   skill_level: string | null;
   whatsapp_link: string | null;
   is_recurring: boolean;
-  recurrence_frequency: string | null;
   creator: Creator | null;
   creator_id: string;
   created_at: string;
@@ -42,7 +43,6 @@ export interface CreateGameData {
   skill_level?: string | null;
   whatsapp_link?: string | null;
   is_recurring?: boolean;
-  recurrence_frequency?: string | null;
 }
 
 export interface User {

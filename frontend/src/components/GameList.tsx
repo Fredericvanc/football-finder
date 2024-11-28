@@ -180,18 +180,25 @@ export const GameList: React.FC<GameListProps> = ({
                     </Typography>
 
                     <Stack spacing={1}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <LocationOnIcon color="action" />
-                        <Typography variant="body2" color="text.secondary">
-                          {game.location_name || 'Location Name'} ({calculateDistance(
-                            currentLocation.latitude,
-                            currentLocation.longitude,
-                            game.latitude,
-                            game.longitude
-                          ).toFixed(1)} km)
-                        </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        {game.location_name && (
+                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                            {game.location_name}
+                          </Typography>
+                        )}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <LocationOnIcon color="action" />
+                          <Typography variant="body2" color="text.secondary">
+                            {game.location} ({calculateDistance(
+                              currentLocation.latitude,
+                              currentLocation.longitude,
+                              game.latitude,
+                              game.longitude
+                            ).toFixed(1)} km)
+                          </Typography>
+                        </Box>
                       </Box>
-                      
+
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AccessTimeIcon color="action" />
                         <Typography variant="body2" color="text.secondary">
