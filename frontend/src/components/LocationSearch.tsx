@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Box, FormControl, InputLabel, useTheme, IconButton } from '@mui/material';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
@@ -15,7 +15,6 @@ interface LocationSearchProps {
 export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, defaultLocation, label }) => {
   const geocoderContainerRef = React.useRef<HTMLDivElement>(null);
   const geocoderRef = React.useRef<MapboxGeocoder | null>(null);
-  const [address, setAddress] = React.useState(defaultLocation?.address || '');
   const [isFocused, setIsFocused] = React.useState(false);
   const [currentLocation, setCurrentLocation] = React.useState<{lat: number; lng: number; address: string} | null>(null);
   const theme = useTheme();
@@ -51,7 +50,6 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     geocoder.on('result', (e) => {
       const [lng, lat] = e.result.center;
       const address = e.result.place_name;
-      setAddress(address);
       onLocationSelect({ lat, lng, address });
     });
 
@@ -81,7 +79,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
   }, [defaultLocation]);
 
   // Get current location
-  const getCurrentLocation = async () => {
+  const getCurrentLocation = useCallback(async () => {
     // If we already have the location, use it
     if (currentLocation) {
       const input = geocoderContainerRef.current?.querySelector('.mapboxgl-ctrl-geocoder--input') as HTMLInputElement;
@@ -143,14 +141,14 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     } catch (error) {
       console.error('Error in getCurrentLocation:', error);
     }
-  };
+  }, [currentLocation, onLocationSelect]);
 
   React.useEffect(() => {
     // Get current location on mount if no default location is provided
     if (!defaultLocation) {
       getCurrentLocation();
     }
-  }, []);
+  }, [defaultLocation, getCurrentLocation]);
 
   return (
     <FormControl 
