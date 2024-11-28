@@ -98,16 +98,12 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     // Otherwise fetch it (this is for the initial load)
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        console.log('Requesting geolocation...');
         if (!navigator.geolocation) {
           reject(new Error('Geolocation is not supported'));
           return;
         }
         navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            console.log('Got position:', pos.coords.latitude, pos.coords.longitude);
-            resolve(pos);
-          },
+          (pos) => resolve(pos),
           (err) => {
             console.error('Geolocation error:', err.message, err.code);
             reject(err);
@@ -120,30 +116,21 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
         );
       });
 
-      console.log('Fetching address from Mapbox...');
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${position.coords.longitude},${position.coords.latitude}.json?access_token=${config.mapboxToken}`
       );
       const data = await response.json();
-      console.log('Got address data:', data);
       const address = data.features[0].place_name;
 
-      console.log('Updating UI with address:', address);
       // Update the input field
       const input = geocoderContainerRef.current?.querySelector('.mapboxgl-ctrl-geocoder--input') as HTMLInputElement;
       if (input) {
-        console.log('Found input element, updating value');
         input.value = address;
-      } else {
-        console.warn('Could not find input element');
       }
 
       // Update geocoder state
       if (geocoderRef.current) {
-        console.log('Updating geocoder state');
         geocoderRef.current.setInput(address);
-      } else {
-        console.warn('Geocoder ref is null');
       }
 
       const locationData = {
