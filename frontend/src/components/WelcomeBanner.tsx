@@ -3,6 +3,7 @@ import { Box, Typography, Container, List, ListItem, ListItemText } from '@mui/m
 import SportsIcon from '@mui/icons-material/Sports';
 import GroupsIcon from '@mui/icons-material/Groups';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 
 interface WelcomeBannerProps {
   isLoggedIn: boolean;
@@ -23,8 +24,8 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ isLoggedIn }) => {
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
-        mt: { xs: 0, md: '-64px' }, // Remove negative margin on mobile
-        pt: { xs: 0, md: '64px' },  // Adjust padding on mobile
+        mt: '-64px', // Offset for AppBar height
+        pt: '64px',  // Add padding to account for the offset
         mb: 0, // Remove bottom margin
       }}
     >
@@ -113,7 +114,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ isLoggedIn }) => {
               gap: 1,
             }}
           >
-            <SportsIcon />
+            <SportsSoccerIcon />
             <Typography>Play More Football</Typography>
           </Box>
         </Box>
