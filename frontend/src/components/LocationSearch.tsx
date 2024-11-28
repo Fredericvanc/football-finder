@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, FormControl, InputLabel } from '@mui/material';
+import { Box, FormControl, InputLabel, useTheme } from '@mui/material';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import './LocationSearch.css';
@@ -15,10 +15,15 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
   const geocoderContainerRef = React.useRef<HTMLDivElement>(null);
   const [address, setAddress] = React.useState(defaultLocation?.address || '');
   const [isFocused, setIsFocused] = React.useState(false);
+  const theme = useTheme();
   const id = React.useId();
 
   React.useEffect(() => {
     if (!geocoderContainerRef.current || !config.mapboxToken) return;
+
+    const container = geocoderContainerRef.current;
+    // Set theme attribute for dark mode styling
+    container.setAttribute('data-theme', theme.palette.mode);
 
     const geocoder = new MapboxGeocoder({
       accessToken: config.mapboxToken,
@@ -28,7 +33,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
       language: 'en',
     });
 
-    geocoder.addTo(geocoderContainerRef.current);
+    geocoder.addTo(container);
 
     // Handle location selection
     geocoder.on('result', (e) => {
@@ -38,22 +43,22 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
       onLocationSelect({ lat, lng, address });
     });
 
-    // Set default location if provided
-    if (defaultLocation) {
-      setAddress(defaultLocation.address);
-    }
-
     // Handle focus and blur events
-    const input = geocoderContainerRef.current.querySelector('input');
+    const input = container.querySelector('input');
     if (input) {
       input.addEventListener('focus', () => setIsFocused(true));
       input.addEventListener('blur', () => setIsFocused(false));
     }
 
+    // Set default location if provided
+    if (defaultLocation) {
+      setAddress(defaultLocation.address);
+    }
+
     return () => {
       geocoder.onRemove();
     };
-  }, [onLocationSelect, defaultLocation]);
+  }, [onLocationSelect, defaultLocation, theme.palette.mode]);
 
   // Get current location
   const getCurrentLocation = () => {
@@ -98,13 +103,19 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
           shrink 
           htmlFor={id}
           sx={{
-            background: '#fff',
+            background: theme.palette.background.paper,
             padding: '0 8px',
             marginLeft: '-4px',
             zIndex: 1500,
             position: 'absolute',
             pointerEvents: 'none',
-            color: isFocused ? '#2196f3' : 'rgba(0, 0, 0, 0.6)',
+            color: isFocused 
+              ? theme.palette.mode === 'dark' 
+                ? '#90caf9' 
+                : '#1976d2'
+              : theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.7)'
+                : 'rgba(0, 0, 0, 0.6)',
             '&.MuiInputLabel-shrink': {
               transform: 'translate(14px, -9px) scale(0.75)',
             }
