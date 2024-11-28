@@ -94,6 +94,16 @@
 }
 
 /* Suggestions list */
+.mapboxgl-ctrl-geocoder .suggestions {
+  position: absolute !important;
+  z-index: 9999 !important; /* Ensure suggestions are always on top */
+  width: 100% !important;
+  margin-top: 1px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+  background: #fff !important;
+}
+
 .mapboxgl-ctrl-geocoder--suggestion-title,
 .mapboxgl-ctrl-geocoder--suggestion-address {
   font-family: "Roboto", "Helvetica", "Arial", sans-serif !important;

@@ -150,8 +150,14 @@ export const GameList: React.FC<GameListProps> = ({
                 inputProps: { min: 0 },
                 endAdornment: <InputAdornment position="end">km</InputAdornment>,
               }}
+              sx={{
+                '& .MuiInputLabel-root': {
+                  zIndex: 0, 
+                  background: 'transparent'
+                }
+              }}
             />
-            
+
             <TextField
               fullWidth
               placeholder="Search games..."
@@ -164,10 +170,16 @@ export const GameList: React.FC<GameListProps> = ({
                   </InputAdornment>
                 ),
               }}
+              sx={{
+                '& .MuiInputLabel-root': {
+                  zIndex: 0, 
+                  background: 'transparent'
+                }
+              }}
             />
 
             <FormControl fullWidth>
-              <InputLabel>Skill Level</InputLabel>
+              <InputLabel sx={{ zIndex: 0, background: 'transparent' }}>Skill Level</InputLabel>
               <Select
                 value={filters.skillLevel}
                 onChange={(e) => handleFilterChange('skillLevel', e.target.value)}
@@ -184,16 +196,30 @@ export const GameList: React.FC<GameListProps> = ({
               <TextField
                 type="number"
                 label="Min Players"
+                fullWidth
                 value={filters.minPlayers}
                 onChange={(e) => handleFilterChange('minPlayers', parseInt(e.target.value) || 0)}
                 InputProps={{ inputProps: { min: 0 } }}
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    zIndex: 0, 
+                    background: 'transparent'
+                  }
+                }}
               />
               <TextField
                 type="number"
                 label="Max Players"
+                fullWidth
                 value={filters.maxPlayers}
                 onChange={(e) => handleFilterChange('maxPlayers', parseInt(e.target.value) || 0)}
                 InputProps={{ inputProps: { min: 0 } }}
+                sx={{
+                  '& .MuiInputLabel-root': {
+                    zIndex: 0, 
+                    background: 'transparent'
+                  }
+                }}
               />
             </Box>
           </Stack>
