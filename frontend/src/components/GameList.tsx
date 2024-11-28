@@ -7,11 +7,14 @@ import {
   CardContent,
   Chip,
   Tooltip,
+  Button,
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupIcon from '@mui/icons-material/Group';
 import RepeatIcon from '@mui/icons-material/Repeat';
+import DirectionsIcon from '@mui/icons-material/Directions';
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { Game } from '../types';
 import { GameFiltersComponent } from './GameFilters';
 import { format } from 'date-fns';
@@ -33,6 +36,22 @@ interface GameListProps {
 
 // Re-export GameFilters type
 export type { GameFilters };
+
+const getDirectionsUrl = (latitude: number, longitude: number, location: string) => {
+  // Check if user is on iOS
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
+  // Create the encoded location string
+  const encodedLocation = encodeURIComponent(location);
+  
+  if (isIOS) {
+    // Apple Maps URL format
+    return `maps://?q=${encodedLocation}&ll=${latitude},${longitude}`;
+  } else {
+    // Google Maps URL format
+    return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+  }
+};
 
 export const GameList: React.FC<GameListProps> = ({
   games,
@@ -150,13 +169,12 @@ export const GameList: React.FC<GameListProps> = ({
               </Box>
             ) : (
               filteredGames.map((game) => (
-                <Card
-                  key={game.id}
-                  sx={{
+                <Card 
+                  sx={{ 
+                    mb: 2, 
                     cursor: 'pointer',
-                    transition: 'transform 0.2s ease-in-out',
                     '&:hover': {
-                      transform: 'translateY(-2px)',
+                      bgcolor: 'action.hover'
                     },
                     border: selectedGame?.id === game.id ? 2 : 0,
                     borderColor: 'primary.main',
@@ -164,25 +182,17 @@ export const GameList: React.FC<GameListProps> = ({
                   onClick={() => onGameSelect(game)}
                 >
                   <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                      <Typography variant="h6" component="div">
-                        {format(new Date(game.date), 'EEE d | HH:mm')}
-                      </Typography>
+                    <Typography variant="h6" component="div" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                      {format(new Date(game.date), "EEE d | HH:mm")}
                       {game.is_recurring && (
-                        <Tooltip title="Recurring game">
-                          <RepeatIcon color="action" />
-                        </Tooltip>
+                        <RepeatIcon fontSize="small" color="action" />
                       )}
-                    </Box>
-
-                    <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                      {game.title || 'Football Game'}
                     </Typography>
 
                     <Stack spacing={1}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                         {game.location_name && (
-                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
                             {game.location_name}
                           </Typography>
                         )}
@@ -200,27 +210,52 @@ export const GameList: React.FC<GameListProps> = ({
                       </Box>
 
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <AccessTimeIcon color="action" />
-                        <Typography variant="body2" color="text.secondary">
-                          {format(new Date(game.date), 'PPp')}
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <GroupIcon color="action" />
                         <Typography variant="body2" color="text.secondary">
-                          {game.min_players} - {game.max_players} players
+                          {game.max_players} players max
+                          {game.skill_level && ` • ${game.skill_level}`}
                         </Typography>
                       </Box>
 
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Chip
-                          label={game.skill_level || 'All Levels'}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                      </Box>
+                      {selectedGame?.id === game.id && (
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: 'column',
+                          gap: 1, 
+                          mt: 3,
+                          width: '100%'
+                        }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            fullWidth
+                            startIcon={<DirectionsIcon />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(getDirectionsUrl(game.latitude, game.longitude, game.location), '_blank');
+                            }}
+                          >
+                            Directions
+                          </Button>
+                          {game.whatsapp_link && (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              fullWidth
+                              startIcon={<WhatsAppIcon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (game.whatsapp_link) {
+                                  window.open(game.whatsapp_link, '_blank');
+                                }
+                              }}
+                              sx={{ bgcolor: '#25D366', '&:hover': { bgcolor: '#128C7E' } }}
+                            >
+                              Register
+                            </Button>
+                          )}
+                        </Box>
+                      )}
                     </Stack>
                   </CardContent>
                 </Card>
