@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Box, AppBar, Toolbar, Typography, Button, Snackbar, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import LightModeIcon from '@mui/icons-material/LightMode';
@@ -244,47 +244,80 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    // Initialize current location with reverse geocoding
-    if (navigator.geolocation) {
+  const getCurrentLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    const mounted = true;
+    const maxRetries = 3;
+    let retryCount = 0;
+
+    const tryGetLocation = () => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          const { latitude, longitude } = position.coords;
-          setCurrentLocation({ latitude, longitude });
-
-          // Reverse geocode to get address
-          try {
-            const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${config.mapboxToken}`
-            );
+          if (mounted) {
+            const { latitude, longitude } = position.coords;
+            setCurrentLocation({
+              latitude,
+              longitude,
+            });
             
-            if (!response.ok) {
-              throw new Error('Failed to fetch address');
+            // Reverse geocode to get address
+            try {
+              const response = await fetch(
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${config.mapboxToken}`
+              );
+              
+              if (!response.ok) {
+                throw new Error('Failed to fetch address');
+              }
+
+              const data = await response.json();
+              const address = data.features[0]?.place_name;
+
+              if (address) {
+                setFilters(prev => ({
+                  ...prev,
+                  location: {
+                    lat: latitude,
+                    lng: longitude,
+                    address
+                  }
+                }));
+              }
+            } catch (error) {
+              console.error('Error getting address:', error);
             }
 
-            const data = await response.json();
-            const address = data.features[0]?.place_name;
-
-            if (address) {
-              setFilters(prev => ({
-                ...prev,
-                location: {
-                  lat: latitude,
-                  lng: longitude,
-                  address
-                }
-              }));
-            }
-          } catch (error) {
-            console.error('Error getting address:', error);
+            setLocationError('');
           }
         },
         (error) => {
           console.error('Error getting location:', error);
+          if (error.code === error.TIMEOUT && retryCount < maxRetries) {
+            retryCount++;
+            console.log(`Retrying location request (${retryCount}/${maxRetries})...`);
+            tryGetLocation(); // Retry
+          } else if (mounted) {
+            setLocationError('Unable to get your location. Please enable location services.');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000, // Increased to 10 seconds
+          maximumAge: 0
         }
       );
-    }
-  }, []); // Run once on mount
+    };
+
+    tryGetLocation();
+  }, [setCurrentLocation, setLocationError, setFilters]);
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, [getCurrentLocation]);
 
   useEffect(() => {
     let mounted = true;
