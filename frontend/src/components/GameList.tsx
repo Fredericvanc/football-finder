@@ -38,19 +38,8 @@ interface GameListProps {
 export type { GameFilters };
 
 const getDirectionsUrl = (latitude: number, longitude: number, location: string) => {
-  // Check if user is on iOS
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  
-  // Create the encoded location string
-  const encodedLocation = encodeURIComponent(location);
-  
-  if (isIOS) {
-    // Apple Maps URL format
-    return `maps://?q=${encodedLocation}&ll=${latitude},${longitude}`;
-  } else {
-    // Google Maps URL format
-    return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-  }
+  // Use a universal link format for directions
+  return `https://maps.google.com/?q=${latitude},${longitude}`;
 };
 
 export const GameList: React.FC<GameListProps> = ({
