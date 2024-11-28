@@ -168,9 +168,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
             position: 'absolute',
             pointerEvents: 'none',
             color: isFocused 
-              ? theme.palette.mode === 'dark' 
-                ? '#90caf9' 
-                : '#1976d2'
+              ? theme.palette.primary.main
               : theme.palette.mode === 'dark'
                 ? 'rgba(255, 255, 255, 0.7)'
                 : 'rgba(0, 0, 0, 0.6)',
