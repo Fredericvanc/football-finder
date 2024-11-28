@@ -223,8 +223,6 @@ export const GameList: React.FC<GameListProps> = ({
         }}>
           <Stack spacing={2}>
             {filteredGames.map((game) => {
-              const isGamePast = new Date(game.date) < new Date();
-              
               return (
                 <Card
                   key={game.id}
