@@ -78,6 +78,21 @@
   background: transparent !important;
 }
 
+/* Location button */
+.location-button {
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  padding: 8px !important;
+  color: inherit !important;
+  z-index: 2 !important;
+}
+
+[data-theme="dark"] .location-button {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
 /* Suggestions list */
 .mapboxgl-ctrl-geocoder--suggestion-title,
 .mapboxgl-ctrl-geocoder--suggestion-address {

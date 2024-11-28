@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, FormControl, InputLabel, useTheme } from '@mui/material';
+import { Box, FormControl, InputLabel, useTheme, IconButton } from '@mui/material';
+import MyLocationIcon from '@mui/icons-material/MyLocation';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 import '@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css';
 import './LocationSearch.css';
@@ -16,6 +17,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
   const geocoderRef = React.useRef<MapboxGeocoder | null>(null);
   const [address, setAddress] = React.useState(defaultLocation?.address || '');
   const [isFocused, setIsFocused] = React.useState(false);
+  const [currentLocation, setCurrentLocation] = React.useState<{lat: number; lng: number; address: string} | null>(null);
   const theme = useTheme();
   const id = React.useId();
 
@@ -79,27 +81,80 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
   }, [defaultLocation]);
 
   // Get current location
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // Reverse geocode the coordinates to get the address
-          fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${position.coords.longitude},${position.coords.latitude}.json?access_token=${config.mapboxToken}`)
-            .then(response => response.json())
-            .then(data => {
-              const address = data.features[0].place_name;
-              setAddress(address);
-              onLocationSelect({
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                address
-              });
-            });
-        },
-        (error) => {
-          console.error('Error getting location:', error);
+  const getCurrentLocation = async () => {
+    // If we already have the location, use it
+    if (currentLocation) {
+      const input = geocoderContainerRef.current?.querySelector('.mapboxgl-ctrl-geocoder--input') as HTMLInputElement;
+      if (input) {
+        input.value = currentLocation.address;
+      }
+      if (geocoderRef.current) {
+        geocoderRef.current.setInput(currentLocation.address);
+      }
+      onLocationSelect(currentLocation);
+      return;
+    }
+
+    // Otherwise fetch it (this is for the initial load)
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        console.log('Requesting geolocation...');
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation is not supported'));
+          return;
         }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            console.log('Got position:', pos.coords.latitude, pos.coords.longitude);
+            resolve(pos);
+          },
+          (err) => {
+            console.error('Geolocation error:', err.message, err.code);
+            reject(err);
+          },
+          { 
+            enableHighAccuracy: false,  
+            timeout: 30000,            
+            maximumAge: 300000         
+          }
+        );
+      });
+
+      console.log('Fetching address from Mapbox...');
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${position.coords.longitude},${position.coords.latitude}.json?access_token=${config.mapboxToken}`
       );
+      const data = await response.json();
+      console.log('Got address data:', data);
+      const address = data.features[0].place_name;
+
+      console.log('Updating UI with address:', address);
+      // Update the input field
+      const input = geocoderContainerRef.current?.querySelector('.mapboxgl-ctrl-geocoder--input') as HTMLInputElement;
+      if (input) {
+        console.log('Found input element, updating value');
+        input.value = address;
+      } else {
+        console.warn('Could not find input element');
+      }
+
+      // Update geocoder state
+      if (geocoderRef.current) {
+        console.log('Updating geocoder state');
+        geocoderRef.current.setInput(address);
+      } else {
+        console.warn('Geocoder ref is null');
+      }
+
+      const locationData = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        address
+      };
+      setCurrentLocation(locationData);  // Store the location
+      onLocationSelect(locationData);
+    } catch (error) {
+      console.error('Error in getCurrentLocation:', error);
     }
   };
 
@@ -142,9 +197,14 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
           {label}
         </InputLabel>
       )}
-      <Box sx={{ width: '100%', position: 'relative', zIndex: 1 }}>
-        <div ref={geocoderContainerRef} id={id} className="geocoder-container" />
-      </Box>
+      <Box ref={geocoderContainerRef} />
+      <IconButton 
+        className="location-button"
+        onClick={getCurrentLocation}
+        size="small"
+      >
+        <MyLocationIcon />
+      </IconButton>
     </FormControl>
   );
 };
