@@ -16,6 +16,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { config } from './config';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 function CreateGameButton({ isLoggedIn, onClick }: { isLoggedIn: boolean; onClick: () => void }) {
@@ -75,6 +76,18 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('darkMode');
     return savedMode ? JSON.parse(savedMode) : false;
+  });
+  const [filters, setFilters] = useState<GameFilters>({
+    search: '',
+    skillLevel: 'all',
+    minPlayers: 0,
+    maxPlayers: 100,
+    distance: 10, // Default 10km radius
+    location: {
+      lat: currentLocation.latitude,
+      lng: currentLocation.longitude,
+      address: `${currentLocation.latitude.toFixed(4)}, ${currentLocation.longitude.toFixed(4)}`
+    }
   });
 
   const theme = useMemo(
@@ -233,6 +246,48 @@ function App() {
   }, []);
 
   useEffect(() => {
+    // Initialize current location with reverse geocoding
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ latitude, longitude });
+
+          // Reverse geocode to get address
+          try {
+            const response = await fetch(
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${config.mapboxToken}`
+            );
+            
+            if (!response.ok) {
+              throw new Error('Failed to fetch address');
+            }
+
+            const data = await response.json();
+            const address = data.features[0]?.place_name;
+
+            if (address) {
+              setFilters(prev => ({
+                ...prev,
+                location: {
+                  lat: latitude,
+                  lng: longitude,
+                  address
+                }
+              }));
+            }
+          } catch (error) {
+            console.error('Error getting address:', error);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        }
+      );
+    }
+  }, []); // Run once on mount
+
+  useEffect(() => {
     let mounted = true;
     let geoWatchId: number | undefined;
     
@@ -319,22 +374,16 @@ function App() {
     }
   };
 
-  const handleFilterChange = (filters: GameFilters) => {
-    const filtered = games.filter(game => {
-      // Search text
-      const searchMatch = !filters.search || 
-        game.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        (game.description?.toLowerCase().includes(filters.search.toLowerCase()) ?? false) ||
-        game.location.toLowerCase().includes(filters.search.toLowerCase());
-
-      // Skill level
-      const skillMatch = !filters.skillLevel || filters.skillLevel === 'all' || 
-        game.skill_level === filters.skillLevel;
-
-      return searchMatch && skillMatch;
-    });
-
-    setFilteredGames(filtered);
+  const handleFilterChange = (newFilters: GameFilters) => {
+    setFilters(newFilters);
+    // Update map center when location changes
+    if (newFilters.location.lat !== filters.location.lat || 
+        newFilters.location.lng !== filters.location.lng) {
+      setCenterLocation({
+        latitude: newFilters.location.lat,
+        longitude: newFilters.location.lng
+      });
+    }
   };
 
   const handleGameSelect = (game: Game | null) => {
@@ -345,6 +394,24 @@ function App() {
         longitude: game.longitude,
       });
     }
+  };
+
+  const handleLocationSelect = (location: { lat: number; lng: number; address: string }) => {
+    // Update filters with new location
+    setFilters(prev => ({
+      ...prev,
+      location: {
+        lat: location.lat,
+        lng: location.lng,
+        address: location.address
+      }
+    }));
+
+    // Update map center
+    setCenterLocation({
+      latitude: location.lat,
+      longitude: location.lng
+    });
   };
 
   const handleLogin = () => {
@@ -478,10 +545,13 @@ function App() {
                     >
                       <GameList
                         games={games}
-                        selectedGame={selectedGame}
                         onGameSelect={handleGameSelect}
+                        onLocationSelect={handleLocationSelect}
                         onFilterChange={handleFilterChange}
+                        currentLocation={currentLocation}
+                        selectedGame={selectedGame}
                         showOnlyFilters={true}
+                        filters={filters}
                       />
                     </Box>
 
@@ -502,10 +572,13 @@ function App() {
                     >
                       <GameList
                         games={filteredGames}
-                        selectedGame={selectedGame}
                         onGameSelect={handleGameSelect}
+                        onLocationSelect={handleLocationSelect}
                         onFilterChange={handleFilterChange}
+                        currentLocation={currentLocation}
+                        selectedGame={selectedGame}
                         showOnlyList={true}
+                        filters={filters}
                       />
                     </Box>
 

@@ -28,11 +28,14 @@ import { config } from '../config';
 
 interface GameListProps {
   games: Game[];
-  selectedGame: Game | null;
-  onGameSelect: (game: Game) => void;
+  onGameSelect: (game: Game | null) => void;
+  onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
   onFilterChange: (filters: GameFilters) => void;
+  currentLocation: { latitude: number; longitude: number };
+  selectedGame: Game | null;
   showOnlyFilters?: boolean;
   showOnlyList?: boolean;
+  filters: GameFilters;
 }
 
 export interface GameFilters {
@@ -50,27 +53,18 @@ export interface GameFilters {
 
 export const GameList: React.FC<GameListProps> = ({
   games,
-  selectedGame,
   onGameSelect,
+  onLocationSelect,
   onFilterChange,
+  currentLocation,
+  selectedGame,
   showOnlyFilters = false,
   showOnlyList = false,
+  filters
 }) => {
-  const [filters, setFilters] = React.useState<GameFilters>({
-    search: '',
-    skillLevel: 'all',
-    minPlayers: 0,
-    maxPlayers: 100,
-    distance: 5, // Default 5km
-    location: {
-      lat: 0,
-      lng: 0,
-      address: ''
-    }
-  });
-
   const filteredGames = React.useMemo(() => {
-    return games.filter(game => {
+    // First filter the games
+    const filtered = games.filter(game => {
       // Filter by search text
       if (filters.search && !game.title.toLowerCase().includes(filters.search.toLowerCase())) {
         return false;
@@ -86,7 +80,7 @@ export const GameList: React.FC<GameListProps> = ({
         return false;
       }
 
-      // Filter by distance
+      // Filter by distance if location is set
       if (filters.location.lat && filters.location.lng) {
         const distance = calculateDistance(
           filters.location.lat,
@@ -101,31 +95,17 @@ export const GameList: React.FC<GameListProps> = ({
 
       return true;
     });
+
+    // Then sort by date (closest date first)
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateA.getTime() - dateB.getTime();
+    });
   }, [games, filters]);
 
-  // Get device location on component mount
-  React.useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          handleFilterChange('location', {
-            lat: latitude,
-            lng: longitude,
-            address: ''  // LocationSearch will handle displaying the address
-          });
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-        }
-      );
-    }
-  }, []);
-
   const handleFilterChange = (key: keyof GameFilters, value: string | number | { lat: number; lng: number; address: string }) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
-    onFilterChange(newFilters);
+    onFilterChange({ ...filters, [key]: value });
   };
 
   return (
@@ -154,8 +134,11 @@ export const GameList: React.FC<GameListProps> = ({
           </Typography>
           <Stack spacing={2}>
             <LocationSearch
-              onLocationSelect={(location) => handleFilterChange('location', location)}
-              defaultLocation={filters.location.lat !== 0 ? filters.location : undefined}
+              onLocationSelect={(loc) => {
+                handleFilterChange('location', loc);
+                onLocationSelect(loc);
+              }}
+              defaultLocation={filters.location}
               label="Location"
             />
             

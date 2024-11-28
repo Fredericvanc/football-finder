@@ -51,3 +51,16 @@ export interface User {
   name: string | null;
   notification_radius?: number;
 }
+
+export interface GameFilters {
+  search: string;
+  skillLevel: string;
+  minPlayers: number;
+  maxPlayers: number;
+  distance: number;
+  location: {
+    lat: number;
+    lng: number;
+    address: string;
+  };
+}

@@ -48,7 +48,10 @@ export const MapView: React.FC<MapViewProps> = ({
   const [viewState, setViewState] = useState({
     latitude: currentLocation.latitude,
     longitude: currentLocation.longitude,
-    zoom: 13
+    zoom: 13,
+    bearing: 0,
+    pitch: 0,
+    padding: { top: 0, bottom: 0, left: 0, right: 0 }
   });
 
   // Track map loading state
@@ -74,12 +77,6 @@ export const MapView: React.FC<MapViewProps> = ({
   }, []);
 
   useEffect(() => {
-    if (config.mapboxToken) {
-      console.log('Mapbox initialized with token:', config.mapboxToken.substring(0, 10) + '...');
-    }
-  }, []);
-
-  useEffect(() => {
     setViewState(prev => ({
       ...prev,
       latitude: currentLocation.latitude,
@@ -98,7 +95,13 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   }, [centerLocation]);
 
-  // Handle theme changes
+  const handleMove = useCallback((evt: { viewState: any }) => {
+    setViewState(prev => ({
+      ...prev,
+      ...evt.viewState,
+    }));
+  }, []);
+
   useEffect(() => {
     if (mapRef.current && isMapLoaded) {
       // Remove the old map instance
@@ -127,7 +130,7 @@ export const MapView: React.FC<MapViewProps> = ({
       mapboxAccessToken={config.mapboxToken}
       mapStyle={mapStyle}
       {...viewState}
-      onMove={evt => setViewState(evt.viewState)}
+      onMove={handleMove}
       style={{ 
         width: '100%', 
         height: '100%',
