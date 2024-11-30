@@ -61,6 +61,8 @@ function App() {
   const [filteredGames, setFilteredGames] = useState<Game[]>([]);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isCreateGameOpen, setIsCreateGameOpen] = useState(false);
+  const [isEditGameOpen, setIsEditGameOpen] = useState(false);
+  const [gameToEdit, setGameToEdit] = useState<Game | null>(null);
   const [locationError, setLocationError] = useState<string>('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
@@ -77,15 +79,15 @@ function App() {
   const [filters, setFilters] = useState<GameFilters>({
     search: '',
     skillLevel: 'all',
-    minPlayers: 0,
-    maxPlayers: 100,
-    distance: 5, // Default 5km radius
+    maxPlayers: 22,
+    distance: 5,
     location: {
       lat: currentLocation.latitude,
       lng: currentLocation.longitude,
       address: `${currentLocation.latitude.toFixed(4)}, ${currentLocation.longitude.toFixed(4)}`
     }
   });
+  const [snackbarMessage, setSnackbarMessage] = useState<{ text: string; severity: 'success' | 'error' } | null>(null);
 
   const theme = useMemo(
     () =>
@@ -404,6 +406,107 @@ function App() {
     }
   };
 
+  const handleEditGame = (game: Game) => {
+    setGameToEdit(game);
+    setIsEditGameOpen(true);
+  };
+
+  const handleDeleteGame = async (game: Game) => {
+    if (!window.confirm('Are you sure you want to delete this game?')) {
+      return;
+    }
+
+    if (!user?.id) {
+      setSnackbarMessage({ text: 'You must be logged in to delete games', severity: 'error' });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('games')
+        .delete()
+        .eq('id', game.id)
+        .eq('creator_id', user.id); // Now user.id is guaranteed to be defined
+
+      if (error) {
+        throw error;
+      }
+
+      // Remove the game from the lists
+      setGames(prevGames => prevGames.filter(g => g.id !== game.id));
+      setFilteredGames(prevGames => prevGames.filter(g => g.id !== game.id));
+      
+      if (selectedGame?.id === game.id) {
+        setSelectedGame(null);
+      }
+
+      setSnackbarMessage({ text: 'Game deleted successfully', severity: 'success' });
+    } catch (error) {
+      console.error('Error deleting game:', error);
+      setSnackbarMessage({ text: 'Failed to delete game', severity: 'error' });
+    }
+  };
+
+  const handleUpdateGame = async (gameData: CreateGameData) => {
+    if (!gameToEdit || !user?.id) {
+      setSnackbarMessage({ text: 'You must be logged in to update games', severity: 'error' });
+      return;
+    }
+
+    try {
+      const { data: updatedGameData, error } = await supabase
+        .from('games')
+        .update({
+          title: gameData.title,
+          description: gameData.description,
+          location: gameData.location,
+          location_name: gameData.location_name,
+          latitude: gameData.latitude,
+          longitude: gameData.longitude,
+          date: gameData.date,
+          max_players: gameData.max_players,
+          skill_level: gameData.skill_level,
+          whatsapp_link: gameData.whatsapp_link,
+          is_recurring: gameData.is_recurring
+        })
+        .eq('id', gameToEdit.id)
+        .eq('creator_id', user.id)
+        .select(`
+          *,
+          profiles(id, name, email)
+        `)
+        .single();
+
+      if (error || !updatedGameData) {
+        throw error || new Error('Failed to update game');
+      }
+
+      // Update the game in state
+      const updatedGame = {
+        ...updatedGameData,
+        date_time: updatedGameData.date,
+        creator: updatedGameData.profiles && updatedGameData.profiles[0] ? {
+          id: updatedGameData.profiles[0].id,
+          name: updatedGameData.profiles[0].name || '',
+          email: updatedGameData.profiles[0].email || '',
+        } : null,
+      };
+
+      setGames(prevGames => 
+        prevGames.map(g => g.id === updatedGame.id ? updatedGame : g)
+      );
+      setFilteredGames(prevGames => 
+        prevGames.map(g => g.id === updatedGame.id ? updatedGame : g)
+      );
+      setGameToEdit(null);
+      setIsEditGameOpen(false);
+      setSnackbarMessage({ text: 'Game updated successfully', severity: 'success' });
+    } catch (error) {
+      console.error('Error updating game:', error);
+      setSnackbarMessage({ text: 'Failed to update game', severity: 'error' });
+    }
+  };
+
   const handleFilterChange = (key: keyof GameFilters, value: string | number | { lat: number; lng: number; address: string }) => {
     setFilters((prevFilters: GameFilters) => ({
       ...prevFilters,
@@ -571,6 +674,7 @@ function App() {
                         selectedGame={selectedGame}
                         showOnlyFilters={true}
                         filters={filters}
+                        currentUser={user}
                       />
                       <GameList
                         games={games}
@@ -581,6 +685,7 @@ function App() {
                         selectedGame={selectedGame}
                         showOnlyList={true}
                         filters={filters}
+                        currentUser={user}
                       />
                       <Box sx={{ height: '400px', width: '100%' }}>
                         <MapView
@@ -616,6 +721,7 @@ function App() {
                         selectedGame={selectedGame}
                         showOnlyFilters={true}
                         filters={filters}
+                        currentUser={user}
                       />
                     </Box>
 
@@ -643,6 +749,9 @@ function App() {
                         selectedGame={selectedGame}
                         showOnlyList={true}
                         filters={filters}
+                        currentUser={user}
+                        onEditGame={handleEditGame}
+                        onDeleteGame={handleDeleteGame}
                       />
                     </Box>
 
@@ -682,9 +791,14 @@ function App() {
           />
 
           <CreateGameForm
-            open={isCreateGameOpen}
-            onClose={() => setIsCreateGameOpen(false)}
-            onSubmit={handleCreateGame}
+            open={isCreateGameOpen || isEditGameOpen}
+            onClose={() => {
+              setIsCreateGameOpen(false);
+              setIsEditGameOpen(false);
+              setGameToEdit(null);
+            }}
+            onSubmit={isEditGameOpen ? handleUpdateGame : handleCreateGame}
+            initialData={gameToEdit}
             currentLocation={currentLocation}
           />
 
@@ -694,11 +808,13 @@ function App() {
             onSuccess={handleAuthSuccess}
           />
 
+          {/* Snackbar for notifications */}
           <Snackbar
-            open={!!locationError}
-            message={locationError}
+            open={!!snackbarMessage}
             autoHideDuration={6000}
-            onClose={() => setLocationError('')}
+            onClose={() => setSnackbarMessage(null)}
+            message={snackbarMessage?.text}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
           />
         </div>
       </Router>

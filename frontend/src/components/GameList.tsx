@@ -8,6 +8,7 @@ import {
   Chip,
   Tooltip,
   Button,
+  IconButton,
 } from '@mui/material';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -15,6 +16,8 @@ import GroupIcon from '@mui/icons-material/Group';
 import RepeatIcon from '@mui/icons-material/Repeat';
 import DirectionsIcon from '@mui/icons-material/Directions';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { Game } from '../types';
 import { GameFiltersComponent } from './GameFilters';
 import { format } from 'date-fns';
@@ -32,6 +35,9 @@ interface GameListProps {
   showOnlyFilters?: boolean;
   showOnlyList?: boolean;
   filters: GameFilters;
+  currentUser: { id: string } | null;
+  onEditGame?: (game: Game) => void;
+  onDeleteGame?: (game: Game) => void;
 }
 
 // Re-export GameFilters type
@@ -51,7 +57,10 @@ export const GameList: React.FC<GameListProps> = ({
   selectedGame,
   showOnlyFilters = false,
   showOnlyList = false,
-  filters
+  filters,
+  currentUser,
+  onEditGame,
+  onDeleteGame,
 }) => {
   const filteredGames = React.useMemo(() => {
     // First filter the games
@@ -62,7 +71,7 @@ export const GameList: React.FC<GameListProps> = ({
         return false;
       }
 
-      // Filter by search text
+      // Filter by search term
       if (filters.search && !game.title.toLowerCase().includes(filters.search.toLowerCase())) {
         return false;
       }
@@ -72,13 +81,13 @@ export const GameList: React.FC<GameListProps> = ({
         return false;
       }
 
-      // Filter by players
-      if (game.max_players < filters.minPlayers || game.min_players > filters.maxPlayers) {
+      // Filter by maximum players
+      if (game.max_players > filters.maxPlayers) {
         return false;
       }
 
-      // Filter by distance if location is set
-      if (filters.location.lat && filters.location.lng) {
+      // Filter by distance
+      if (filters.location && filters.distance) {
         const distance = calculateDistance(
           filters.location.lat,
           filters.location.lng,
@@ -162,9 +171,6 @@ export const GameList: React.FC<GameListProps> = ({
                   sx={{ 
                     mb: 2, 
                     cursor: 'pointer',
-                    '&:hover': {
-                      bgcolor: 'action.hover'
-                    },
                     border: selectedGame?.id === game.id ? 2 : 0,
                     borderColor: 'primary.main',
                   }}
@@ -206,6 +212,42 @@ export const GameList: React.FC<GameListProps> = ({
                         </Typography>
                       </Box>
 
+                      {currentUser && game.creator_id === currentUser.id && (
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: 'column',
+                          gap: 1, 
+                          width: '100%'
+                        }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<EditIcon />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditGame?.(game);
+                            }}
+                            color="primary"
+                            fullWidth
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<DeleteIcon />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteGame?.(game);
+                            }}
+                            color="error"
+                            fullWidth
+                          >
+                            Delete
+                          </Button>
+                        </Box>
+                      )}
+
                       {selectedGame?.id === game.id && (
                         <Box sx={{ 
                           display: 'flex', 
@@ -217,27 +259,18 @@ export const GameList: React.FC<GameListProps> = ({
                           <Button
                             variant="outlined"
                             size="small"
-                            fullWidth
                             startIcon={<DirectionsIcon />}
                             onClick={(e) => {
                               e.stopPropagation();
-                              const url = getDirectionsUrl(game.latitude, game.longitude, game.location);
-                              if (/Mobi|Android/i.test(navigator.userAgent)) {
-                                // On mobile, use location.href to avoid opening a new tab
-                                window.location.href = url;
-                              } else {
-                                // On desktop, open in a new tab
-                                window.open(url, '_blank');
-                              }
+                              window.open(getDirectionsUrl(game.latitude, game.longitude, game.location), '_blank');
                             }}
                           >
                             Directions
                           </Button>
                           {game.whatsapp_link && (
                             <Button
-                              variant="contained"
+                              variant="outlined"  
                               size="small"
-                              fullWidth
                               startIcon={<WhatsAppIcon />}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -245,7 +278,6 @@ export const GameList: React.FC<GameListProps> = ({
                                   window.open(game.whatsapp_link, '_blank');
                                 }
                               }}
-                              sx={{ bgcolor: '#25D366', '&:hover': { bgcolor: '#128C7E' } }}
                             >
                               Register
                             </Button>
