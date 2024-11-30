@@ -15,12 +15,67 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [isDefaultLocationSet, setIsDefaultLocationSet] = useState(false);
+  const [isLocationSelected, setIsLocationSelected] = useState(false);
+  const selectedSuggestionRef = useRef<any>(null);
+  
   const geocoderContainerRef = React.useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = React.useState(false);
   const [currentLocation, setCurrentLocation] = React.useState<{lat: number; lng: number; address: string} | null>(null);
   const theme = useTheme();
   const id = useId();
   const sessionToken = useId();
+
+  // Set initial query if defaultLocation exists
+  useEffect(() => {
+    if (defaultLocation?.address && !selectedSuggestionRef.current) {
+      setIsDefaultLocationSet(true);
+      setQuery(defaultLocation.address);
+    }
+  }, [defaultLocation]);
+
+  useEffect(() => {
+    if (isLocationSelected && selectedSuggestionRef.current) {
+      setQuery(selectedSuggestionRef.current.name);
+      return;
+    }
+    if (query.length > 2 && !isDefaultLocationSet) {
+      fetchSuggestions(query);
+    } else {
+      setSuggestions([]);
+    }
+  }, [query, isDefaultLocationSet, isLocationSelected]);
+
+  // Perform reverse geocoding when coordinates are provided without an address
+  useEffect(() => {
+    const fetchLocationDetails = async () => {
+      if (defaultLocation?.lat && defaultLocation?.lng && !defaultLocation?.address) {
+        try {
+          setIsDefaultLocationSet(true);
+          const response = await axios.get(`https://api.mapbox.com/search/searchbox/v1/forward`, {
+            params: {
+              q: `${defaultLocation.lat},${defaultLocation.lng}`,
+              access_token: config.mapboxToken,
+              session_token: sessionToken,
+              language: 'pt',
+              limit: 1,
+            },
+          });
+          
+          if (response.data.features && response.data.features.length > 0) {
+            const location = response.data.features[0];
+            if (!isLocationSelected) {
+              setQuery(location.properties.full_address || location.properties.name);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching location details:', error);
+        }
+      }
+    };
+
+    fetchLocationDetails();
+  }, [defaultLocation, sessionToken, isLocationSelected]);
 
   const fetchSuggestions = async (searchText: string) => {
     try {
@@ -40,9 +95,14 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     }
   };
 
-  const fetchLocationDetails = async (mapboxId: string) => {
+  const handleSuggestionClick = async (suggestion: any) => {
+    setIsLocationSelected(true);
+    setSuggestions([]);
+    selectedSuggestionRef.current = suggestion;
+    setQuery(suggestion.name);
+    
     try {
-      const response = await axios.get(`https://api.mapbox.com/search/searchbox/v1/retrieve/${mapboxId}`, {
+      const response = await axios.get(`https://api.mapbox.com/search/searchbox/v1/retrieve/${suggestion.mapbox_id}`, {
         params: {
           access_token: config.mapboxToken,
           session_token: sessionToken,
@@ -50,32 +110,24 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
       });
       const location = response.data.features[0];
       setSelectedLocation(location);
+      
       onLocationSelect({
         lat: location.geometry.coordinates[1],
         lng: location.geometry.coordinates[0],
-        address: location.properties.full_address,
+        address: suggestion.full_address || suggestion.address,
       });
     } catch (error) {
       console.error('Error fetching location details:', error);
+      setIsLocationSelected(false);
+      selectedSuggestionRef.current = null;
     }
   };
-
-  useEffect(() => {
-    if (query.length > 2) {
-      fetchSuggestions(query);
-    } else {
-      setSuggestions([]);
-    }
-  }, [query]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(event.target.value);
-  };
-
-  const handleSuggestionClick = (suggestion: any) => {
-    fetchLocationDetails(suggestion.mapbox_id);
-    setQuery(suggestion.name);
-    setSuggestions([]);
+    setIsDefaultLocationSet(false);
+    setIsLocationSelected(false);
+    selectedSuggestionRef.current = null;
   };
 
   // Get current location
