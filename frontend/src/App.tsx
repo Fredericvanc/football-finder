@@ -425,8 +425,7 @@ function App() {
       const { error } = await supabase
         .from('games')
         .delete()
-        .eq('id', game.id)
-        .eq('creator_id', user.id); // Now user.id is guaranteed to be defined
+        .eq('id', game.id);
 
       if (error) {
         throw error;
@@ -440,10 +439,12 @@ function App() {
         setSelectedGame(null);
       }
 
-      setSnackbarMessage({ text: 'Game deleted successfully', severity: 'success' });
+      // Update map state or refetch games
+      // Example: setMapGames(prevMapGames => prevMapGames.filter(g => g.id !== game.id));
+
     } catch (error) {
       console.error('Error deleting game:', error);
-      setSnackbarMessage({ text: 'Failed to delete game', severity: 'error' });
+      setSnackbarMessage({ text: 'Error deleting game', severity: 'error' });
     }
   };
 
