@@ -26,6 +26,20 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
   const id = useId();
   const sessionToken = useId();
 
+  useEffect(() => {
+    // Add click outside listener
+    const handleClickOutside = (event: MouseEvent) => {
+      if (geocoderContainerRef.current && !geocoderContainerRef.current.contains(event.target as Node)) {
+        setSuggestions([]);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Set initial query if defaultLocation exists
   useEffect(() => {
     if (defaultLocation?.address && !selectedSuggestionRef.current) {
