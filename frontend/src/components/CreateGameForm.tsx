@@ -25,6 +25,7 @@ interface CreateGameFormProps {
   onClose: () => void;
   onSubmit: (gameData: CreateGameData) => Promise<void>;
   currentLocation: Location;
+  initialData?: Game | null;
 }
 
 export const CreateGameForm: React.FC<CreateGameFormProps> = ({
@@ -32,12 +33,13 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
   onClose,
   onSubmit,
   currentLocation,
+  initialData,
 }) => {
   const [formData, setFormData] = useState({
     title: 'Football Game',
-    organization: '',
     description: '',
     location: '',
+    location_name: '',
     date: new Date(),
     whatsapp_link: '',
     max_players: '',
@@ -52,6 +54,50 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
     longitude: currentLocation.longitude,
     zoom: 15
   });
+
+  // Reset form when dialog opens/closes or when initialData changes
+  useEffect(() => {
+    if (open && initialData) {
+      setFormData({
+        title: initialData.title,
+        description: initialData.description || '',
+        location: initialData.location,
+        location_name: initialData.location_name || '',
+        date: new Date(initialData.date),
+        whatsapp_link: initialData.whatsapp_link || '',
+        max_players: initialData.max_players.toString(),
+        skill_level: initialData.skill_level || '',
+        latitude: initialData.latitude,
+        longitude: initialData.longitude,
+        is_recurring: initialData.is_recurring,
+      });
+      setViewState({
+        latitude: initialData.latitude,
+        longitude: initialData.longitude,
+        zoom: 15,
+      });
+    } else if (!open) {
+      // Reset form when closing
+      setFormData({
+        title: 'Football Game',
+        description: '',
+        location: '',
+        location_name: '',
+        date: new Date(),
+        whatsapp_link: '',
+        max_players: '',
+        skill_level: '',
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        is_recurring: false,
+      });
+      setViewState({
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        zoom: 13,
+      });
+    }
+  }, [open, initialData, currentLocation]);
 
   // Update form location when current location changes
   useEffect(() => {
@@ -127,7 +173,7 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
       title: formData.title,
       description: formData.description || null,
       location: formData.location,
-      location_name: formData.organization || null,
+      location_name: formData.location_name || null,
       latitude: formData.latitude,
       longitude: formData.longitude,
       date: formData.date.toISOString(),
@@ -164,7 +210,9 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <form onSubmit={handleSubmit}>
-        <DialogTitle>Create New Game</DialogTitle>
+        <DialogTitle>
+          {initialData ? 'Edit Game' : 'Create New Game'}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <LocationSearch
@@ -275,10 +323,10 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
             </TextField>
 
             <TextField
-              label="Organization Name (optional)"
-              value={formData.organization}
-              onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-              placeholder="e.g., Sports Club, School, Company"
+              label="Location Name (optional)"
+              value={formData.location_name}
+              onChange={(e) => setFormData({ ...formData, location_name: e.target.value })}
+              placeholder="e.g., Stadium, Park, Field"
             />
 
             <TextField
@@ -301,7 +349,7 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
         <DialogActions>
           <Button onClick={onClose}>Cancel</Button>
           <Button type="submit" variant="contained" color="primary">
-            Create Game
+            {initialData ? 'Save Changes' : 'Create Game'}
           </Button>
         </DialogActions>
       </form>

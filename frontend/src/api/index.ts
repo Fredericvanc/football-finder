@@ -12,7 +12,6 @@ interface DatabaseGame {
   longitude: number;
   date: string;
   max_players: number;
-  min_players?: number;
   skill_level: string | null;
   whatsapp_link: string | null;
   is_recurring: boolean;
@@ -25,32 +24,11 @@ interface DatabaseGame {
   }>;
 }
 
-const transformGame = (dbGame: DatabaseGame): Game => {
-  const creator = dbGame.profiles?.[0];
-  return {
-    id: dbGame.id,
-    title: dbGame.title,
-    description: dbGame.description,
-    location: dbGame.location,
-    location_name: dbGame.location_name,
-    latitude: dbGame.latitude,
-    longitude: dbGame.longitude,
-    date: dbGame.date,
-    date_time: dbGame.date,
-    max_players: dbGame.max_players,
-    min_players: dbGame.min_players ?? 1,
-    skill_level: dbGame.skill_level,
-    whatsapp_link: dbGame.whatsapp_link,
-    is_recurring: dbGame.is_recurring,
-    creator: creator ? {
-      id: creator.id,
-      name: creator.name || 'Anonymous',
-      email: creator.email
-    } : null,
-    creator_id: dbGame.creator_id,
-    created_at: dbGame.created_at
-  };
-};
+const transformGame = (dbGame: DatabaseGame): Game => ({
+  ...dbGame,
+  date_time: dbGame.date,
+  creator: null, // Will be populated by the caller if needed
+});
 
 const getAuthHeader = () => {
   const token = localStorage.getItem('token');

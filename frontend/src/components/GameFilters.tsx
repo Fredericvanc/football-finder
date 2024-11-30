@@ -84,13 +84,11 @@ export const GameFiltersComponent: React.FC<GameFiltersComponentProps> = ({
         </FormControl>
 
         <Box>
-          <InputLabel>Number of Players</InputLabel>
+          <InputLabel>Maximum Players</InputLabel>
           <Slider
-            value={[filters.minPlayers, filters.maxPlayers]}
+            value={filters.maxPlayers}
             onChange={(_, value) => {
-              const [min, max] = value as number[];
-              onFilterChange('minPlayers', min);
-              onFilterChange('maxPlayers', max);
+              onFilterChange('maxPlayers', value as number);
             }}
             min={2}
             max={22}

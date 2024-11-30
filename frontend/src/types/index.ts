@@ -22,7 +22,6 @@ export interface Game {
   date: string;
   date_time: string;
   max_players: number;
-  min_players: number;
   skill_level: string | null;
   whatsapp_link: string | null;
   is_recurring: boolean;
@@ -55,7 +54,6 @@ export interface User {
 export interface GameFilters {
   search: string;
   skillLevel: string;
-  minPlayers: number;
   maxPlayers: number;
   distance: number;
   location: {
