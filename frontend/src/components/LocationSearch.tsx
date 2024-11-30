@@ -77,6 +77,41 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     fetchLocationDetails();
   }, [defaultLocation, sessionToken, isLocationSelected]);
 
+  useEffect(() => {
+    if (!currentLocation && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const response = await axios.get(
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${position.coords.longitude},${position.coords.latitude}.json?access_token=${config.mapboxToken}`
+            );
+            const data = response.data;
+            const address = data.features[0].place_name;
+
+            const locationData = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              address,
+            };
+
+            setCurrentLocation(locationData);
+            onLocationSelect(locationData);
+          } catch (error) {
+            console.error('Error fetching initial location:', error);
+          }
+        },
+        (error) => {
+          console.error('Error getting initial location:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
+    }
+  }, [currentLocation, onLocationSelect]);
+
   const fetchSuggestions = async (searchText: string) => {
     try {
       const response = await axios.get(`https://api.mapbox.com/search/searchbox/v1/suggest`, {
@@ -130,75 +165,55 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     selectedSuggestionRef.current = null;
   };
 
-  // Get current location
-  const getCurrentLocation = useCallback(async () => {
+  const getCurrentLocation = useCallback(() => {
     if (currentLocation) {
       const input = geocoderContainerRef.current?.querySelector('input') as HTMLInputElement;
       if (input) {
         input.value = currentLocation.address;
       }
       onLocationSelect(currentLocation);
-      return;
-    }
-
-    if (!navigator.geolocation) {
-      console.error('Geolocation is not supported by your browser');
-      return;
-    }
-
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => resolve(pos),
-          (err) => reject(err),
-          {
-            enableHighAccuracy: true,
-            timeout: 5000,
-            maximumAge: 0,
-          }
-        );
-      });
-
-      const response = await axios.get(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${position.coords.longitude},${position.coords.latitude}.json?access_token=${config.mapboxToken}`
-      );
-      const data = response.data;
-      const address = data.features[0].place_name;
-
-      const input = geocoderContainerRef.current?.querySelector('input') as HTMLInputElement;
-      if (input) {
-        input.value = address;
-      }
-
-      const locationData = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        address,
-      };
-
-      setCurrentLocation(locationData);
-      onLocationSelect(locationData);
-    } catch (error) {
-      console.error('Error getting current location:', error);
     }
   }, [currentLocation, onLocationSelect]);
 
   return (
-    <Box sx={{ position: 'relative' }} ref={geocoderContainerRef}>
-      <FormControl fullWidth>
-        <TextField
-          id={id}
-          label={label || 'Search location'}
-          value={query}
-          onChange={handleInputChange}
-          placeholder="Search location..."
-          variant="outlined"
-          fullWidth
-        />
-      </FormControl>
+    <Box 
+      sx={{ position: 'relative' }} 
+      ref={geocoderContainerRef}
+      role="search"
+      aria-label="Location search"
+    >
+      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <FormControl fullWidth>
+          <TextField
+            id={id}
+            label={label || 'Search location'}
+            value={query}
+            onChange={handleInputChange}
+            placeholder="Search location..."
+            variant="outlined"
+            fullWidth
+            aria-expanded={suggestions.length > 0}
+            aria-controls={suggestions.length > 0 ? `${id}-suggestions` : undefined}
+            aria-owns={suggestions.length > 0 ? `${id}-suggestions` : undefined}
+          />
+        </FormControl>
+        <IconButton 
+          onClick={getCurrentLocation}
+          aria-label="Use current location"
+          size="large"
+          sx={{
+            flexShrink: 0,
+            alignSelf: 'center',
+          }}
+        >
+          <MyLocationIcon />
+        </IconButton>
+      </Box>
       {suggestions.length > 0 && (
         <Paper 
           elevation={3}
+          id={`${id}-suggestions`}
+          role="listbox"
           sx={{
             position: 'absolute',
             top: '100%',
@@ -215,6 +230,8 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
               <ListItem
                 key={suggestion.mapbox_id}
                 onClick={() => handleSuggestionClick(suggestion)}
+                role="option"
+                aria-selected={false}
                 sx={{
                   cursor: 'pointer',
                   '&:hover': {
@@ -228,18 +245,6 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
           </List>
         </Paper>
       )}
-      <IconButton 
-        className="location-button"
-        onClick={getCurrentLocation}
-        sx={{
-          position: 'absolute',
-          right: theme.spacing(1),
-          top: '50%',
-          transform: 'translateY(-50%)',
-        }}
-      >
-        <MyLocationIcon />
-      </IconButton>
     </Box>
   );
 };
