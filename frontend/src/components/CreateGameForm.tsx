@@ -46,7 +46,7 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
     skill_level: '',
     latitude: currentLocation.latitude,
     longitude: currentLocation.longitude,
-    is_recurring: false,
+    is_recurring: true,
   });
 
   const [viewState, setViewState] = useState({
@@ -70,7 +70,7 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
         skill_level: '',
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
-        is_recurring: false,
+        is_recurring: true,
       });
       setViewState({
         latitude: currentLocation.latitude,
