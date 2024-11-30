@@ -57,27 +57,8 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
 
   // Reset form when dialog opens/closes or when initialData changes
   useEffect(() => {
-    if (open && initialData) {
-      setFormData({
-        title: initialData.title,
-        description: initialData.description || '',
-        location: initialData.location,
-        location_name: initialData.location_name || '',
-        date: new Date(initialData.date),
-        whatsapp_link: initialData.whatsapp_link || '',
-        max_players: initialData.max_players.toString(),
-        skill_level: initialData.skill_level || '',
-        latitude: initialData.latitude,
-        longitude: initialData.longitude,
-        is_recurring: initialData.is_recurring,
-      });
-      setViewState({
-        latitude: initialData.latitude,
-        longitude: initialData.longitude,
-        zoom: 15,
-      });
-    } else if (!open) {
-      // Reset form when closing
+    if (!open) {
+      // Only reset form when closing
       setFormData({
         title: 'Football Game',
         description: '',
@@ -96,22 +77,40 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
         longitude: currentLocation.longitude,
         zoom: 13,
       });
+    } else if (initialData) {
+      // Set initial data when editing
+      setFormData({
+        title: initialData.title,
+        description: initialData.description || '',
+        location: initialData.location,
+        location_name: initialData.location_name || '',
+        date: new Date(initialData.date),
+        whatsapp_link: initialData.whatsapp_link || '',
+        max_players: initialData.max_players.toString(),
+        skill_level: initialData.skill_level || '',
+        latitude: initialData.latitude,
+        longitude: initialData.longitude,
+        is_recurring: initialData.is_recurring,
+      });
+      setViewState({
+        latitude: initialData.latitude,
+        longitude: initialData.longitude,
+        zoom: 15,
+      });
+    } else if (open) {
+      // Only set location when first opening for new game
+      setFormData(prev => ({
+        ...prev,
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+      }));
+      setViewState({
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        zoom: 13,
+      });
     }
-  }, [open, initialData, currentLocation]);
-
-  // Update form location when current location changes
-  useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      latitude: currentLocation.latitude,
-      longitude: currentLocation.longitude,
-    }));
-    setViewState(prev => ({
-      ...prev,
-      latitude: currentLocation.latitude,
-      longitude: currentLocation.longitude,
-    }));
-  }, [currentLocation]);
+  }, [open, initialData]);
 
   const handleMapClick = async (event: mapboxgl.MapLayerMouseEvent) => {
     const { lng, lat } = event.lngLat;
@@ -208,7 +207,20 @@ export const CreateGameForm: React.FC<CreateGameFormProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      keepMounted={false}
+      sx={{
+        '& .MuiDialog-paper': {
+          height: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
+    >
       <form onSubmit={handleSubmit}>
         <DialogTitle>
           {initialData ? 'Edit Game' : 'Create New Game'}
