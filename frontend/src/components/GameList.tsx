@@ -168,6 +168,7 @@ export const GameList: React.FC<GameListProps> = ({
             ) : (
               filteredGames.map((game) => (
                 <Card 
+                  key={game.id}
                   sx={{ 
                     mb: 2, 
                     cursor: 'pointer',
