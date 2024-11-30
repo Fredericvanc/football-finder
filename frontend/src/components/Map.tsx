@@ -68,7 +68,11 @@ export const MapView: React.FC<MapViewProps> = ({
   const handleMapLoad = useCallback(() => {
     console.log('Map loaded with style:', mapStyle);
     setIsMapLoaded(true);
-  }, [mapStyle]);
+    const map = mapRef.current?.getMap();
+    if (map && isMapLoaded) {
+      map.setPaintProperty('background', 'background-opacity', 1);
+    }
+  }, [mapStyle, isMapLoaded]);
 
   // Handle map removal
   const handleMapRemove = useCallback(() => {
@@ -104,15 +108,13 @@ export const MapView: React.FC<MapViewProps> = ({
 
   useEffect(() => {
     if (mapRef.current && isMapLoaded) {
-      // Remove the old map instance
-      handleMapRemove();
-      // Force a re-render of the map with the new style
       const map = mapRef.current.getMap();
-      map.setStyle(mapStyle);
-      // Re-initialize the map
-      handleMapLoad();
+      map.on('style.load', () => {
+        console.log('Map style loaded');
+        map.setPaintProperty('background', 'background-opacity', 1);
+      });
     }
-  }, [theme.palette.mode, mapStyle, handleMapLoad, handleMapRemove, isMapLoaded]);
+  }, [isMapLoaded]);
 
   const handleGPSClick = () => {
     setViewState(prev => ({
