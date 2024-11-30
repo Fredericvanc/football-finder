@@ -182,6 +182,11 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
   const handleLocationButtonClick = useCallback(() => {
     if (currentLocation) {
       setQuery(currentLocation.address);
+      setIsLocationSelected(true);
+      selectedSuggestionRef.current = {
+        name: currentLocation.address,
+        full_address: currentLocation.address
+      };
       onLocationSelect(currentLocation);
     }
   }, [currentLocation, onLocationSelect]);
@@ -196,16 +201,19 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
         <FormControl fullWidth>
           <TextField
-            id={id}
-            label={label || 'Search location'}
+            fullWidth
             value={query}
             onChange={handleInputChange}
             placeholder="Search location..."
-            variant="outlined"
-            fullWidth
-            aria-expanded={suggestions.length > 0}
-            aria-controls={suggestions.length > 0 ? `${id}-suggestions` : undefined}
-            aria-owns={suggestions.length > 0 ? `${id}-suggestions` : undefined}
+            label={label || "Location"}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            InputProps={{
+              'aria-label': 'Search location',
+              'aria-expanded': suggestions.length > 0,
+              'aria-controls': suggestions.length > 0 ? `${id}-listbox` : undefined,
+              'aria-activedescendant': undefined,
+            }}
           />
         </FormControl>
         <IconButton 
@@ -223,7 +231,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
       {suggestions.length > 0 && (
         <Paper 
           elevation={3}
-          id={`${id}-suggestions`}
+          id={`${id}-listbox`}
           role="listbox"
           sx={{
             position: 'absolute',
