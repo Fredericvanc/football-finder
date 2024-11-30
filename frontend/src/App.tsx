@@ -656,63 +656,19 @@ function App() {
                       gap: { xs: 0, md: 0 }, // Remove gap between sections
                     }}
                   >
-                    {/* Mobile View */}
-                    <Box
-                      sx={{
-                        display: { xs: 'flex', md: 'none' },
-                        flexDirection: 'column',
-                        gap: 2,
-                        p: 0, // Remove padding
-                        width: '100%',
-                      }}
-                    >
-                      <GameList
-                        games={games}
-                        onGameSelect={handleGameSelect}
-                        onLocationSelect={handleLocationSelect}
-                        onFilterChange={handleFilterChange}
-                        currentLocation={currentLocation}
-                        selectedGame={selectedGame}
-                        showOnlyFilters={true}
-                        filters={filters}
-                        currentUser={user}
-                      />
-                      <GameList
-                        games={games}
-                        onGameSelect={handleGameSelect}
-                        onLocationSelect={handleLocationSelect}
-                        onFilterChange={handleFilterChange}
-                        currentLocation={currentLocation}
-                        selectedGame={selectedGame}
-                        showOnlyList={true}
-                        filters={filters}
-                        currentUser={user}
-                      />
-                      <Box sx={{ height: '400px', width: '100%' }}>
-                        <MapView
-                          games={games}
-                          currentLocation={currentLocation}
-                          selectedGame={selectedGame}
-                          onGameSelect={handleGameSelect}
-                          centerLocation={centerLocation}
-                        />
-                      </Box>
-                    </Box>
-
-                    {/* Desktop View */}
+                    {/* Desktop View - Filters Only */}
                     <Box
                       sx={{
                         display: { xs: 'none', md: 'flex' },
                         flexDirection: 'column',
                         width: '400px',
-                        p: 0, // Remove padding
+                        p: 0,
                         borderRight: 1,
                         borderColor: 'divider',
                         height: '100%',
                         overflow: 'auto',
                       }}
                     >
-                      {/* Left sidebar with filters */}
                       <GameList
                         games={games}
                         onGameSelect={handleGameSelect}
@@ -726,11 +682,11 @@ function App() {
                       />
                     </Box>
 
-                    {/* Center section with game list */}
+                    {/* Center section - Game List */}
                     <Box
                       sx={{
                         width: { xs: '100%', md: '400px' },
-                        borderRight: { xs: 0, md: '1px solid #e0e0e0' }, // Subtle border style
+                        borderRight: { xs: 0, md: '1px solid #e0e0e0' },
                         bgcolor: 'background.paper',
                         boxShadow: { 
                           xs: '0 1px 3px rgba(0,0,0,0.1)',
@@ -741,6 +697,21 @@ function App() {
                         zIndex: 1,
                       }}
                     >
+                      {/* Show filters on mobile, hide on desktop */}
+                      <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                        <GameList
+                          games={games}
+                          onGameSelect={handleGameSelect}
+                          onLocationSelect={handleLocationSelect}
+                          onFilterChange={handleFilterChange}
+                          currentLocation={currentLocation}
+                          selectedGame={selectedGame}
+                          showOnlyFilters={true}
+                          filters={filters}
+                          currentUser={user}
+                        />
+                      </Box>
+                      {/* Always show game list */}
                       <GameList
                         games={filteredGames}
                         onGameSelect={handleGameSelect}
