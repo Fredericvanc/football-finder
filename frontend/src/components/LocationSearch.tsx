@@ -40,6 +40,41 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     };
   }, []);
 
+  // Initialize geolocation
+  useEffect(() => {
+    const initializeGeolocation = async () => {
+      if (!currentLocation && navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0,
+            });
+          });
+
+          const response = await axios.get(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${position.coords.longitude},${position.coords.latitude}.json?access_token=${config.mapboxToken}`
+          );
+
+          if (response.data.features && response.data.features.length > 0) {
+            const location = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              address: response.data.features[0].place_name,
+            };
+            setCurrentLocation(location);
+            onLocationSelect(location);
+          }
+        } catch (error) {
+          console.error('Error getting location:', error);
+        }
+      }
+    };
+
+    initializeGeolocation();
+  }, [currentLocation, onLocationSelect]);
+
   // Set initial query if defaultLocation exists
   useEffect(() => {
     if (defaultLocation?.address && !selectedSuggestionRef.current) {
@@ -90,41 +125,6 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
 
     fetchLocationDetails();
   }, [defaultLocation, sessionToken, isLocationSelected]);
-
-  useEffect(() => {
-    if (!currentLocation && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const response = await axios.get(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${position.coords.longitude},${position.coords.latitude}.json?access_token=${config.mapboxToken}`
-            );
-            const data = response.data;
-            const address = data.features[0].place_name;
-
-            const locationData = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-              address,
-            };
-
-            setCurrentLocation(locationData);
-            onLocationSelect(locationData);
-          } catch (error) {
-            console.error('Error fetching initial location:', error);
-          }
-        },
-        (error) => {
-          console.error('Error getting initial location:', error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        }
-      );
-    }
-  }, [currentLocation, onLocationSelect]);
 
   const fetchSuggestions = async (searchText: string) => {
     try {
@@ -179,12 +179,9 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
     selectedSuggestionRef.current = null;
   };
 
-  const getCurrentLocation = useCallback(() => {
+  const handleLocationButtonClick = useCallback(() => {
     if (currentLocation) {
-      const input = geocoderContainerRef.current?.querySelector('input') as HTMLInputElement;
-      if (input) {
-        input.value = currentLocation.address;
-      }
+      setQuery(currentLocation.address);
       onLocationSelect(currentLocation);
     }
   }, [currentLocation, onLocationSelect]);
@@ -212,7 +209,7 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect
           />
         </FormControl>
         <IconButton 
-          onClick={getCurrentLocation}
+          onClick={handleLocationButtonClick}
           aria-label="Use current location"
           size="large"
           sx={{
